@@ -1,0 +1,7 @@
+apiVersion: es.noah.domain/v1alpha1
+kind: Elastalert
+metadata:
+  name: elastalert-sample
+spec:
+  # Add fields here
+  foo: bar
