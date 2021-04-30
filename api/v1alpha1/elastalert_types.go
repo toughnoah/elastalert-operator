@@ -1,4 +1,5 @@
 /*
+
 Copyright 2021.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +18,45 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// +k8s:openapi-gen=true
+	ElastAlertPhraseFailed = "FAILED"
+	// +k8s:openapi-gen=true
+	ElastAlertPhraseSucceeded = "RUNNING"
+
+	ElastAlertAvailableReason = "NewElastAlertAvailable"
+
+	ElastAlertAvailableType = "Progressing"
+
+	ElastAlertAvailableStatus = "True"
+
+	ElastAlertUnAvailableReason = "ElastAlertUnAvailable"
+
+	ElastAlertUnAvailableType = "Stopped"
+
+	ElastAlertUnAvailableStatus = "False"
+
+	ActionSuccess = "success"
+
+	ActionFailed = "failed"
+
+	ElastAlertVersion = "v1.0"
+
+	ConfigSuffx = "-config"
+
+	RuleSuffx = "-rule"
+
+	RuleMountPath = "/etc/elastalert/rules"
+
+	ConfigMountPath = "/etc/elastalert"
+
+	SuccessMessage = "Have a nice day!"
+
+	FailedMessage = "Faild to apply resources"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -27,19 +66,30 @@ import (
 type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Elastalert. Edit elastalert_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Elastalert rules as yaml string
+	Rule               map[string]string `json:"rule,omitempty"`
+	v1.PodTemplateSpec `json:",inline"`
+	ConfigSetting      map[string]string `json:"config,omitempty"`
+	Image              string            `json:"image,omitempty"`
+	Cert               map[string]string `json:"cert,omitempty"`
 }
 
 // ElastalertStatus defines the observed state of Elastalert
 type ElastalertStatus struct {
+	Version     string             `json:"version,omitempty"`
+	Phase       string             `json:"phase,omitempty"`
+	Condictions []metav1.Condition `json:"conditions"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +k8s:openapi-gen=true
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Elastalert"
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="Elastalert instance's status"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="Elastalert Version"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Elastalert is the Schema for the elastalerts API
 type Elastalert struct {
