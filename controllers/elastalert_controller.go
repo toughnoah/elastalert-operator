@@ -53,15 +53,15 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	err := r.Get(ctx, req.NamespacedName, elastalert)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			log.Info("Elastalert deleted", "Elastalert.Namespace", req.Namespace)
+			log.Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		log.Error(err, "Failed to get Elastalert from server")
 		return ctrl.Result{}, err
 	}
-	condiction := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
-	if condiction == nil || condiction.ObservedGeneration != elastalert.Generation {
+	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
+	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
 		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply Secret", "Secret.Namespace", req.Namespace)
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
@@ -98,7 +98,6 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		return ctrl.Result{}, nil
 
 	}
-	log.Info("Generation not chaneged, skiping reconcile.", "Elastalert.Namespace", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 
