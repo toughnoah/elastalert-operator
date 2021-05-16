@@ -43,19 +43,7 @@ func DefaultAffinity(esName string) *corev1.Affinity {
 	return &corev1.Affinity{
 		// prefer to avoid two pods in the same cluster being co-located on a single node
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				//{
-				//	Weight: 100,
-				//	PodAffinityTerm: corev1.PodAffinityTerm{
-				//		TopologyKey: "kubernetes.io/hostname",
-				//		LabelSelector: &metav1.LabelSelector{
-				//			MatchLabels: map[string]string{
-				//				App: esName,
-				//			},
-				//		},
-				//	},
-				//},
-			},
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{},
 		},
 	}
 }
