@@ -67,7 +67,6 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 		"kubectl.kubernetes.io/restartedAt": getUtcTime(),
 		"sidecar.istio.io/inject":           "false",
 	}
-	//var DefaultCommand = []string{"sh", "-c", "tail -f /dev/null"}
 	var DefaultCommand = []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"}
 	volumes, volumeMounts := buildVolumes(elastalert.Name)
 	labelselector := buildLabels()
