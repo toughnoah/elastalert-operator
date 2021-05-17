@@ -42,6 +42,10 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error)
 	if err != nil {
 		return nil, err
 	}
+	varTrue := true
+	//deliberate action to enable
+	podTemplate.Spec.AutomountServiceAccountToken = &varTrue
+
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      elastalert.Name,
