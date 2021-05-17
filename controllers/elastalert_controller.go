@@ -78,8 +78,8 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			return ctrl.Result{}, err
 		}
 		log.Info("Apply configmaps success", "Secret.Namespace", req.Namespace)
-
-		if err := applyDeployment(r.Client, log, r.Scheme, ctx, elastalert); err != nil {
+		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert)
+		if err != nil {
 			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
@@ -87,7 +87,14 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.Info("Apply deployment success", "Deployment.Namespace", req.Namespace)
+		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
+			log.Error(err, "Deployment stabiliz failed ", "Deployment.Namespace", req.Namespace)
+			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
+				log.Error(err, "Failed to update elastalert status")
+				return ctrl.Result{}, err
+			}
+		}
+		log.Info("Deployment has stabilized", "Deployment.Namespace", req.Namespace)
 		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
@@ -208,7 +215,7 @@ func applySecret(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e
 	return nil
 }
 
-func applyDeployment(c client.Client, log logr.Logger, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
+func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	err := c.Get(ctx,
 		types.NamespacedName{
@@ -219,30 +226,24 @@ func applyDeployment(c client.Client, log logr.Logger, Scheme *runtime.Scheme, c
 		if k8serrors.IsNotFound(err) {
 			deploy, err = podspec.GenerateNewDeployment(Scheme, e)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			err = c.Create(ctx, deploy)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			if err = podspec.WaitForStability(c, log, ctx, *deploy); err != nil {
-				return err
-			}
-			return nil
+			return deploy, nil
 		}
-		return err
+		return nil, err
 	} else {
 		deploy, err = podspec.GenerateNewDeployment(Scheme, e)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		err = c.Update(ctx, deploy)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if err = podspec.WaitForStability(c, log, ctx, *deploy); err != nil {
-			return err
-		}
-		return nil
+		return deploy, nil
 	}
 }

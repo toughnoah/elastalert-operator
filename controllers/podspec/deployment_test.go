@@ -77,9 +77,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 									v1.ResourceMemory: DefaultMemoryLimits,
 								},
 							},
-							Lifecycle: &v1.Lifecycle{
-								PreStop: &v1.Handler{},
-							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
 							},
@@ -194,9 +191,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 								Limits: map[v1.ResourceName]resource.Quantity{
 									v1.ResourceMemory: DefaultMemoryLimits,
 								},
-							},
-							Lifecycle: &v1.Lifecycle{
-								PreStop: &v1.Handler{},
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
@@ -313,9 +307,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 									v1.ResourceMemory: resource.MustParse("1Gi"),
 									v1.ResourceCPU:    resource.MustParse("1"),
 								},
-							},
-							Lifecycle: &v1.Lifecycle{
-								PreStop: &v1.Handler{},
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
@@ -452,9 +443,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 								},
 							},
 							Command: []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"},
-							Lifecycle: &v1.Lifecycle{
-								PreStop: &v1.Handler{},
-							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
 							},
@@ -559,9 +547,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 								Limits: map[v1.ResourceName]resource.Quantity{
 									v1.ResourceMemory: DefaultMemoryLimits,
 								},
-							},
-							Lifecycle: &v1.Lifecycle{
-								PreStop: &v1.Handler{},
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},

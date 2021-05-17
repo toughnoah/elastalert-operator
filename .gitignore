@@ -22,4 +22,5 @@ testbin/*
 .idea
 *.swp
 *.swo
+*.txt
 *~
