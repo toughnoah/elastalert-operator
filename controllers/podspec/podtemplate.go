@@ -28,8 +28,8 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 		WithInitContainers().
 		WithVolumes(volumes...).
 		WithVolumeMounts(volumeMounts...).
-		WithInitContainerDefaults().
-		WithPreStopHook(*NewPreStopHook())
+		WithInitContainerDefaults()
+		//WithPreStopHook(*NewPreStopHook())
 	return builder.PodTemplate, nil
 }
 

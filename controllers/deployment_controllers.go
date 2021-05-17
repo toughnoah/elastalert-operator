@@ -34,7 +34,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get deployment from server")
 		return ctrl.Result{}, err
 	}
-	if err := recreateDeployment(r.Client, r.Scheme, log, ctx, elastalert); err != nil {
+	if err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert); err != nil {
 		log.Error(err, "Failed to recreate Deployment by steps", "Deployment.Namespace", req.Namespace)
 		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 			log.Error(err, "Failed to update elastalert status")
@@ -63,7 +63,7 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 //	return reconciliations
 //}
 
-func recreateDeployment(c client.Client, Scheme *runtime.Scheme, log logr.Logger, ctx context.Context, e *esv1alpha1.Elastalert) error {
+func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
 	deploy := &appsv1.Deployment{}
 	err := c.Get(ctx,
 		types.NamespacedName{
@@ -82,7 +82,6 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, log logr.Logger
 		if err = c.Create(ctx, deploy); err != nil {
 			return err
 		}
-		log.Info("Recreate Deployment Success", "Deployment.Namespace", e.Namespace)
 	}
 	return nil
 }
