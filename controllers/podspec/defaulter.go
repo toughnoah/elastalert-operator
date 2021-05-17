@@ -5,6 +5,7 @@
 package podspec
 
 import (
+	"fmt"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
@@ -256,20 +257,20 @@ func (b *PodTemplateBuilder) WithTerminationGracePeriod(period int64) *PodTempla
 // WithInitContainerDefaults sets default values for the current init containers.
 //
 // Defaults:
-// - If the init container contains an empty image field, it's inherited from the main container.
-// - VolumeMounts from the main container are added to the init container VolumeMounts, unless they would conflict
+// - If the init container contains an empty image field, it's inherited from the elastalert container.
+// - VolumeMounts from the elastalert container are added to the init container VolumeMounts, unless they would conflict
 //   with a specified VolumeMount (by having the same VolumeMount.Name or VolumeMount.MountPath)
 // - default environment variables
 //
 // This method can also be used to set some additional environment variables.
 func (b *PodTemplateBuilder) WithInitContainerDefaults(additionalEnvVars ...corev1.EnvVar) *PodTemplateBuilder {
-	mainContainer := b.containerDefaulter.Container()
+	elastalertContainer := b.containerDefaulter.Container()
 	for i := range b.PodTemplate.Spec.InitContainers {
 		b.PodTemplate.Spec.InitContainers[i] =
 			NewDefaulter(&b.PodTemplate.Spec.InitContainers[i]).
-				// Inherit image and volume mounts from main container in the Pod
-				WithImage(mainContainer.Image).
-				WithVolumeMounts(mainContainer.VolumeMounts).
+				// Inherit image and volume mounts from elastalert container in the Pod
+				WithImage(elastalertContainer.Image).
+				WithVolumeMounts(elastalertContainer.VolumeMounts).
 				Container()
 	}
 	return b
@@ -310,19 +311,20 @@ func (b *PodTemplateBuilder) WithInitContainers(
 			// Create a container based on what the user specified but ensure that values
 			// are set if none are provided.
 			containers = append(containers,
-
 				// Set the container provided by the user as the base.
 				NewDefaulter(userContainer.DeepCopy()).
 					// Inherit all other values from the container built by the controller.
 					From(c).
 					Container())
+			fmt.Println(NewDefaulter(userContainer.DeepCopy()).
+				// Inherit all other values from the container built by the controller.
+				From(c).
+				Container())
 		} else {
 			containers = append(containers, c)
 		}
 	}
-
 	b.PodTemplate.Spec.InitContainers = append(containers, b.PodTemplate.Spec.InitContainers...)
-
 	return b
 }
 
@@ -380,8 +382,5 @@ func (b *PodTemplateBuilder) WithAutomountServiceAccountToken() *PodTemplateBuil
 }
 
 func NewPreStopHook() *corev1.Handler {
-	return &corev1.Handler{
-		Exec: &corev1.ExecAction{
-			Command: []string{"bash", "-c", "echo 'have a nice day'"}},
-	}
+	return &corev1.Handler{}
 }

@@ -53,10 +53,6 @@ const (
 	RuleMountPath = "/etc/elastalert/rules"
 
 	ConfigMountPath = "/etc/elastalert"
-
-	SuccessMessage = "Have a nice day!"
-
-	FailedMessage = "Faild to apply resources"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -67,11 +63,11 @@ type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// Elastalert rules as yaml string
-	Rule               map[string]string `json:"rule,omitempty"`
-	v1.PodTemplateSpec `json:",inline"`
-	ConfigSetting      map[string]string `json:"config,omitempty"`
-	Image              string            `json:"image,omitempty"`
-	Cert               map[string]string `json:"cert,omitempty"`
+	Rule            map[string]string  `json:"rule,omitempty"`
+	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
+	ConfigSetting   map[string]string  `json:"config,omitempty"`
+	Image           string             `json:"image,omitempty"`
+	Cert            map[string]string  `json:"cert,omitempty"`
 }
 
 // ElastalertStatus defines the observed state of Elastalert
