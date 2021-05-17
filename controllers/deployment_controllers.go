@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
+	"elastalert/controllers/podspec"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -71,7 +72,7 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, log logr.Logger
 		},
 		deploy)
 	if err != nil && k8serrors.IsNotFound(err) {
-		deploy, err = GenerateNewDeployment(Scheme, e)
+		deploy, err = podspec.GenerateNewDeployment(Scheme, e)
 		if err != nil {
 			return err
 		}
