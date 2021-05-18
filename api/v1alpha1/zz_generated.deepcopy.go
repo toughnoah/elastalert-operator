@@ -21,7 +21,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -89,7 +88,6 @@ func (in *ElastalertList) DeepCopyObject() runtime.Object {
 func (in *ElastalertSpec) DeepCopyInto(out *ElastalertSpec) {
 	*out = *in
 	if in.Rule != nil {
-		fmt.Println(*in)
 		in, out := &in.Rule, &out.Rule
 		*out = make([]FreeForm, len(*in))
 		for i := range *in {
