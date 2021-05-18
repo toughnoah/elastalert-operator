@@ -20,6 +20,7 @@ import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
 	"elastalert/controllers/podspec"
+	"fmt"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,6 +48,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	log := r.Log.WithValues("elastalert", req.NamespacedName)
 	var t podspec.Util = &podspec.TimeUtil{}
 	elastalert := &esv1alpha1.Elastalert{}
+	fmt.Println(elastalert.Spec.Rule)
 	err := r.Get(ctx, req.NamespacedName, elastalert)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
