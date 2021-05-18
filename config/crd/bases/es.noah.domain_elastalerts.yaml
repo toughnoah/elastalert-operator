@@ -69,8 +69,7 @@ spec:
                 type: object
               rule:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
-                  Elastalert rules as yaml string'
+                  Important: Run "make" to regenerate code after modifying this file'
                 items:
                   description: FreeForm defines a common options parameter that maintains
                     the hierarchical structure of the data, unlike Options which flattens
