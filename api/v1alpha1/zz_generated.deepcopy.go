@@ -89,9 +89,9 @@ func (in *ElastalertList) DeepCopyObject() runtime.Object {
 func (in *ElastalertSpec) DeepCopyInto(out *ElastalertSpec) {
 	*out = *in
 	if in.Rule != nil {
+		fmt.Println(in.Rule)
 		in, out := &in.Rule, &out.Rule
 		*out = make([]FreeForm, len(*in))
-		fmt.Println("go here")
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
