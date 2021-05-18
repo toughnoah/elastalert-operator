@@ -22,6 +22,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Request) (ctrl.Result, error) {
+	var t podspec.Util = &podspec.TimeUtil{}
 	log := r.Log.WithValues("deployment", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
@@ -34,9 +35,9 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get deployment from server")
 		return ctrl.Result{}, err
 	}
-	if err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert); err != nil {
+	if err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert, t); err != nil {
 		log.Error(err, "Failed to recreate Deployment by steps", "Deployment.Namespace", req.Namespace)
-		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
+		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, t); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
@@ -63,7 +64,7 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 //	return reconciliations
 //}
 
-func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
+func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert, t podspec.Util) error {
 	deploy := &appsv1.Deployment{}
 	err := c.Get(ctx,
 		types.NamespacedName{
@@ -72,7 +73,7 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Con
 		},
 		deploy)
 	if err != nil && k8serrors.IsNotFound(err) {
-		deploy, err = podspec.GenerateNewDeployment(Scheme, e)
+		deploy, err = podspec.GenerateNewDeployment(Scheme, e, t)
 		if err != nil {
 			return err
 		}

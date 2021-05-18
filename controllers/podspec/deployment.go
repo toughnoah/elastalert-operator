@@ -21,22 +21,21 @@ type PodTemplateBuilder struct {
 	containerDefaulter Defaulter
 }
 
-func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
-	deploy, err := BuildDeployment(*e)
+func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert, t Util) (*appsv1.Deployment, error) {
+	deploy, err := BuildDeployment(*e, t)
 	if err != nil {
 		return nil, err
 	}
-	err = ctrl.SetControllerReference(e, deploy, Scheme)
-	if err != nil {
+	if err := ctrl.SetControllerReference(e, deploy, Scheme); err != nil {
 		return nil, err
 	}
 	return deploy, nil
 }
 
-func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error) {
+func BuildDeployment(elastalert v1alpha1.Elastalert, t Util) (*appsv1.Deployment, error) {
 	var replicas = new(int32)
 	*replicas = 1
-	podTemplate, err := BuildPodTemplateSpec(elastalert)
+	podTemplate, err := BuildPodTemplateSpec(elastalert, t)
 	if err != nil {
 		return nil, err
 	}

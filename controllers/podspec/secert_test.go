@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"testing"
 )
 
@@ -26,6 +27,16 @@ func TestGenerateCertSecret(t *testing.T) {
 			want: v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: DefaultCertName,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "v1",
+							Kind:               "Elastalert",
+							Name:               "",
+							UID:                "",
+							Controller:         &varTrue,
+							BlockOwnerDeletion: &varTrue,
+						},
+					},
 				},
 				Data: map[string][]byte{
 					DefaultElasticCertName: []byte("abc"),
@@ -35,8 +46,11 @@ func TestGenerateCertSecret(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			have := *GenerateCertSecret(&tc.elastalert)
-			require.Equal(t, tc.want, have)
+			s := scheme.Scheme
+			s.AddKnownTypes(v1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+			have, err := GenerateCertSecret(s, &tc.elastalert)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, *have)
 		})
 	}
 }

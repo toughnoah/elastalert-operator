@@ -5,7 +5,6 @@
 package podspec
 
 import (
-	"fmt"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
@@ -316,10 +315,6 @@ func (b *PodTemplateBuilder) WithInitContainers(
 					// Inherit all other values from the container built by the controller.
 					From(c).
 					Container())
-			fmt.Println(NewDefaulter(userContainer.DeepCopy()).
-				// Inherit all other values from the container built by the controller.
-				From(c).
-				Container())
 		} else {
 			containers = append(containers, c)
 		}
@@ -342,45 +337,45 @@ func (b *PodTemplateBuilder) WithPreStopHook(handler corev1.Handler) *PodTemplat
 	return b
 }
 
-func (b *PodTemplateBuilder) WithArgs(args ...string) *PodTemplateBuilder {
-	b.containerDefaulter.WithArgs(args)
-	return b
-}
+//func (b *PodTemplateBuilder) WithArgs(args ...string) *PodTemplateBuilder {
+//	b.containerDefaulter.WithArgs(args)
+//	return b
+//}
 
-func (b *PodTemplateBuilder) WithServiceAccount(serviceAccount string) *PodTemplateBuilder {
-	if b.PodTemplate.Spec.ServiceAccountName == "" {
-		b.PodTemplate.Spec.ServiceAccountName = serviceAccount
-	}
-	return b
-}
+//func (b *PodTemplateBuilder) WithServiceAccount(serviceAccount string) *PodTemplateBuilder {
+//	if b.PodTemplate.Spec.ServiceAccountName == "" {
+//		b.PodTemplate.Spec.ServiceAccountName = serviceAccount
+//	}
+//	return b
+//}
 
-func (b *PodTemplateBuilder) WithHostNetwork() *PodTemplateBuilder {
-	b.PodTemplate.Spec.HostNetwork = true
-	return b
-}
+//func (b *PodTemplateBuilder) WithHostNetwork() *PodTemplateBuilder {
+//	b.PodTemplate.Spec.HostNetwork = true
+//	return b
+//}
+//
+//func (b *PodTemplateBuilder) WithDNSPolicy(dnsPolicy corev1.DNSPolicy) *PodTemplateBuilder {
+//	if b.PodTemplate.Spec.DNSPolicy == "" {
+//		b.PodTemplate.Spec.DNSPolicy = dnsPolicy
+//	}
+//	return b
+//}
+//
+//func (b *PodTemplateBuilder) WithPodSecurityContext(securityContext corev1.PodSecurityContext) *PodTemplateBuilder {
+//	if b.PodTemplate.Spec.SecurityContext == nil {
+//		b.PodTemplate.Spec.SecurityContext = &securityContext
+//	}
+//	return b
+//}
+//
+//func (b *PodTemplateBuilder) WithAutomountServiceAccountToken() *PodTemplateBuilder {
+//	if b.PodTemplate.Spec.AutomountServiceAccountToken == nil {
+//		t := true
+//		b.PodTemplate.Spec.AutomountServiceAccountToken = &t
+//	}
+//	return b
+//}
 
-func (b *PodTemplateBuilder) WithDNSPolicy(dnsPolicy corev1.DNSPolicy) *PodTemplateBuilder {
-	if b.PodTemplate.Spec.DNSPolicy == "" {
-		b.PodTemplate.Spec.DNSPolicy = dnsPolicy
-	}
-	return b
-}
-
-func (b *PodTemplateBuilder) WithPodSecurityContext(securityContext corev1.PodSecurityContext) *PodTemplateBuilder {
-	if b.PodTemplate.Spec.SecurityContext == nil {
-		b.PodTemplate.Spec.SecurityContext = &securityContext
-	}
-	return b
-}
-
-func (b *PodTemplateBuilder) WithAutomountServiceAccountToken() *PodTemplateBuilder {
-	if b.PodTemplate.Spec.AutomountServiceAccountToken == nil {
-		t := true
-		b.PodTemplate.Spec.AutomountServiceAccountToken = &t
-	}
-	return b
-}
-
-func NewPreStopHook() *corev1.Handler {
-	return &corev1.Handler{}
-}
+//func NewPreStopHook() *corev1.Handler {
+//	return &corev1.Handler{}
+//}

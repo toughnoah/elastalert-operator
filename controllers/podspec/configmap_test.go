@@ -2,9 +2,11 @@ package podspec
 
 import (
 	esv1alpha1 "elastalert/api/v1alpha1"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"reflect"
 	"testing"
 )
@@ -167,6 +169,92 @@ func TestConfigMapsToMap(t *testing.T) {
 			if !reflect.DeepEqual(have, tc.want) {
 				t.Errorf("podspec.ConfigMapsToMap() = %v, want %v", have, tc.want)
 			}
+		})
+	}
+}
+
+func TestGenerateNewConfigmap(t *testing.T) {
+	testCases := []struct {
+		name       string
+		elastalert esv1alpha1.Elastalert
+		suffx      string
+		want       corev1.ConfigMap
+	}{
+		{
+			name:  "test generate default config",
+			suffx: "-config",
+			elastalert: esv1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-elastalert",
+				},
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: map[string]string{
+						"config.yaml": "test: configmap",
+					},
+				},
+			},
+			want: corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-elastalert-config",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "v1",
+							Kind:               "Elastalert",
+							Name:               "test-elastalert",
+							UID:                "",
+							Controller:         &varTrue,
+							BlockOwnerDeletion: &varTrue,
+						},
+					},
+				},
+				Data: map[string]string{
+					"config.yaml": "test: configmap",
+				},
+			},
+		},
+		{
+			name:  "test generate default rule",
+			suffx: "-rule",
+			elastalert: esv1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-elastalert",
+				},
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: map[string]string{
+						"config.yaml": "test: configmap",
+					},
+					Rule: map[string]string{
+						"rule.yaml": "test: rule",
+					},
+				},
+			},
+			want: corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-elastalert-rule",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "v1",
+							Kind:               "Elastalert",
+							Name:               "test-elastalert",
+							UID:                "",
+							Controller:         &varTrue,
+							BlockOwnerDeletion: &varTrue,
+						},
+					},
+				},
+				Data: map[string]string{
+					"rule.yaml": "test: rule",
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := scheme.Scheme
+			s.AddKnownTypes(corev1.SchemeGroupVersion, &esv1alpha1.Elastalert{})
+			have, err := GenerateNewConfigmap(s, &tc.elastalert, tc.suffx)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, *have)
 		})
 	}
 }
