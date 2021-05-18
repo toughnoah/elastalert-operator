@@ -58,8 +58,8 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get Elastalert from server")
 		return ctrl.Result{}, err
 	}
-	fmt.Println(elastalert.Spec.ConfigSetting)
-	fmt.Println(elastalert.Spec.Rule)
+	fmt.Println(elastalert.Spec.ConfigSetting.GetMap())
+	fmt.Println(elastalert.Spec)
 	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
 		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
