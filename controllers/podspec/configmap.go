@@ -11,12 +11,20 @@ import (
 )
 
 func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suffix string) (*corev1.ConfigMap, error) {
-	var data map[string]string
+	var data = make(map[string]string)
 	switch suffix {
 	case esv1alpha1.RuleSuffx:
-		data = e.Spec.Rule
+		ruleArray, err := e.Spec.Rule.GetMapArray()
+		if err != nil {
+			return nil, err
+		}
+		data, err = GenerateYamlMap(ruleArray)
+		if err != nil {
+			return nil, err
+		}
 	case esv1alpha1.ConfigSuffx:
-		data = e.Spec.ConfigSetting
+		out, _ := yaml.Marshal(e.Spec.Rule)
+		data["config.yaml"] = string(out)
 	}
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -34,13 +42,8 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 
 func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 	var config = map[string]interface{}{}
-	var bytesConfig []byte
-	var err error
-	if e.Spec.ConfigSetting == nil {
-		return errors.New("Not found config.yaml")
-	}
-	if err = yaml.Unmarshal([]byte(e.Spec.ConfigSetting["config.yaml"]), &config); err != nil {
-		return err
+	if m, err := e.Spec.ConfigSetting.GetMap(); m == nil || err != nil {
+		return errors.New("get config failed")
 	}
 	config["rules_folder"] = DefaultRulesFolder
 	if config["use_ssl"] != nil && config["use_ssl"].(bool) == true && stringCert == "" {
@@ -64,10 +67,6 @@ func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 		delete(config, "verify_certs")
 		delete(config, "ca_certs")
 	}
-	if bytesConfig, err = yaml.Marshal(config); err != nil {
-		return err
-	}
-	e.Spec.ConfigSetting["config.yaml"] = string(bytesConfig)
 	return nil
 }
 
@@ -77,4 +76,17 @@ func ConfigMapsToMap(cms []corev1.ConfigMap) map[string]corev1.ConfigMap {
 		m[d.Name] = d
 	}
 	return m
+}
+
+func GenerateYamlMap(ruleArray []map[string]interface{}) (map[string]string, error) {
+	var data = map[string]string{}
+	for _, v := range ruleArray {
+		key := v["name"].(string) + ".yaml"
+		out, err := yaml.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		data[key] = string(out)
+	}
+	return data, nil
 }

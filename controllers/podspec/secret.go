@@ -18,7 +18,7 @@ func GenerateCertSecret(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert) (*core
 
 func BuildCertSecret(e *esv1alpha1.Elastalert) *corev1.Secret {
 	var data = map[string][]byte{}
-	stringCert := e.Spec.Cert[DefaultElasticCertName]
+	stringCert := e.Spec.Cert
 	data[DefaultElasticCertName] = []byte(stringCert)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
