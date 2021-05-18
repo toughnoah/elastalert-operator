@@ -71,7 +71,13 @@ spec:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file
                   Elastalert rules as yaml string'
-                type: object
+                items:
+                  description: FreeForm defines a common options parameter that maintains
+                    the hierarchical structure of the data, unlike Options which flattens
+                    the hierarchy into a key/value map where the hierarchy is converted
+                    to '.' separated items in the key.
+                  type: object
+                type: array
               spec:
                 description: 'Specification of the desired behavior of the pod. More
                   info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
