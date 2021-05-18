@@ -84,7 +84,7 @@ func ConfigMapsToMap(cms []corev1.ConfigMap) map[string]corev1.ConfigMap {
 func GenerateYamlMap(ruleArray []esv1alpha1.FreeForm) (map[string]string, error) {
 	var data = map[string]string{}
 	for _, v := range ruleArray {
-		fmt.Println(v)
+		fmt.Println(v.GetMap())
 		m, err := v.GetMap()
 		if err != nil {
 			return nil, err
