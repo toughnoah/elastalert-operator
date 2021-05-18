@@ -63,11 +63,12 @@ type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// Elastalert rules as yaml string
-	Rule            map[string]string  `json:"rule,omitempty"`
+	Rule            FreeForm           `json:"rule"`
 	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	ConfigSetting   map[string]string  `json:"config,omitempty"`
+	ConfigSetting   FreeForm           `json:"config"`
 	Image           string             `json:"image,omitempty"`
-	Cert            map[string]string  `json:"cert,omitempty"`
+	Cert            string             `json:"cert,omitempty"`
+	Alert           FreeForm           `json:"alert,omitempty"`
 }
 
 // ElastalertStatus defines the observed state of Elastalert
