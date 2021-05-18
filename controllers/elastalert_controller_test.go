@@ -360,9 +360,11 @@ func TestReconcile(t *testing.T) {
 						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
 							"config": "test",
 						}),
-						Rule: v1alpha1.NewArrayFreeForm([]map[string]interface{}{
-							{"name": "test-elasalert", "type": "any"},
-						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
+						},
 					},
 				},
 			).Build(),
@@ -376,9 +378,11 @@ func TestReconcile(t *testing.T) {
 					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
 						"config": "test",
 					}),
-					Rule: v1alpha1.NewArrayFreeForm([]map[string]interface{}{
-						{"name": "test-elasalert", "type": "any"},
-					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
 				},
 			},
 		},

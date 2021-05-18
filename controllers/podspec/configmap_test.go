@@ -198,9 +198,11 @@ func TestGenerateNewConfigmap(t *testing.T) {
 					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
 						"config": "test",
 					}),
-					Rule: esv1alpha1.NewArrayFreeForm([]map[string]interface{}{
-						{"name": "test-elasalert", "type": "any"},
-					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
 				},
 			},
 			want: corev1.ConfigMap{
@@ -218,7 +220,7 @@ func TestGenerateNewConfigmap(t *testing.T) {
 					},
 				},
 				Data: map[string]string{
-					"test-elasalert.yaml": "name: test-elasalert\ntype: any\n",
+					"test-elastalert.yaml": "name: test-elastalert\ntype: any\n",
 				},
 			},
 		},
@@ -237,20 +239,18 @@ func TestGenerateNewConfigmap(t *testing.T) {
 func TestGenerateYamlMap(t *testing.T) {
 	testCases := []struct {
 		name     string
-		maparray []map[string]interface{}
+		maparray []esv1alpha1.FreeForm
 		want     map[string]string
 	}{
 		{
 			name: "test generate yaml map",
-			maparray: []map[string]interface{}{
-				{
-					"name": "test-elastalert",
-					"type": "any",
-				},
-				{
-					"name": "test-elastalert2",
-					"type": "aggs",
-				},
+			maparray: []esv1alpha1.FreeForm{
+				esv1alpha1.NewFreeForm(map[string]interface{}{
+					"name": "test-elastalert", "type": "any",
+				}),
+				esv1alpha1.NewFreeForm(map[string]interface{}{
+					"name": "test-elastalert2", "type": "aggs",
+				}),
 			},
 			want: map[string]string{
 				"test-elastalert.yaml":  "name: test-elastalert\ntype: any\n",

@@ -12,13 +12,10 @@ import (
 
 func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suffix string) (*corev1.ConfigMap, error) {
 	var data = make(map[string]string)
+	var err error
 	switch suffix {
 	case esv1alpha1.RuleSuffx:
-		ruleArray, err := e.Spec.Rule.GetMapArray()
-		if err != nil {
-			return nil, err
-		}
-		data, err = GenerateYamlMap(ruleArray)
+		data, err = GenerateYamlMap(e.Spec.Rule)
 		if err != nil {
 			return nil, err
 		}
@@ -37,7 +34,7 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 		},
 		Data: data,
 	}
-	err := ctrl.SetControllerReference(e, cm, Scheme)
+	err = ctrl.SetControllerReference(e, cm, Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -83,15 +80,17 @@ func ConfigMapsToMap(cms []corev1.ConfigMap) map[string]corev1.ConfigMap {
 	return m
 }
 
-func GenerateYamlMap(ruleArray []map[string]interface{}) (map[string]string, error) {
+func GenerateYamlMap(ruleArray []esv1alpha1.FreeForm) (map[string]string, error) {
 	var data = map[string]string{}
 	for _, v := range ruleArray {
-		key := v["name"].(string) + ".yaml"
-		out, err := yaml.Marshal(v)
+		m, _ := v.GetMap()
+		key := m["name"].(string) + ".yaml"
+		out, err := yaml.Marshal(m)
 		if err != nil {
 			return nil, err
 		}
 		data[key] = string(out)
+
 	}
 	return data, nil
 }
