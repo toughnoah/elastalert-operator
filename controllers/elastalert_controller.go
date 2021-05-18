@@ -20,7 +20,6 @@ import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
 	"elastalert/controllers/podspec"
-	"fmt"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -58,8 +57,6 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get Elastalert from server")
 		return ctrl.Result{}, err
 	}
-	fmt.Println(elastalert.Spec.ConfigSetting.GetMap())
-	fmt.Println(elastalert.Spec)
 	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
 		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
