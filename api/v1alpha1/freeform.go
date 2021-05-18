@@ -18,14 +18,6 @@ func NewFreeForm(o map[string]interface{}) FreeForm {
 	}
 	return freeForm
 }
-func NewArrayFreeForm(o []map[string]interface{}) FreeForm {
-	freeForm := FreeForm{}
-	if o != nil {
-		j, _ := json.Marshal(o)
-		freeForm.json = &j
-	}
-	return freeForm
-}
 
 // UnmarshalJSON implements an alternative parser for this field
 func (o *FreeForm) UnmarshalJSON(b []byte) error {
@@ -59,16 +51,6 @@ func (o FreeForm) GetMap() (map[string]interface{}, error) {
 		return m, nil
 	}
 
-	if err := json.Unmarshal(*o.json, &m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-func (o FreeForm) GetMapArray() ([]map[string]interface{}, error) {
-	var m []map[string]interface{}
-	if nil == o.json {
-		return m, nil
-	}
 	if err := json.Unmarshal(*o.json, &m); err != nil {
 		return nil, err
 	}
