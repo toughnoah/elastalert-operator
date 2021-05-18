@@ -18,6 +18,14 @@ func NewFreeForm(o map[string]interface{}) FreeForm {
 	}
 	return freeForm
 }
+func NewArrayFreeForm(o []map[string]interface{}) FreeForm {
+	freeForm := FreeForm{}
+	if o != nil {
+		j, _ := json.Marshal(o)
+		freeForm.json = &j
+	}
+	return freeForm
+}
 
 // UnmarshalJSON implements an alternative parser for this field
 func (o *FreeForm) UnmarshalJSON(b []byte) error {

@@ -23,7 +23,11 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 			return nil, err
 		}
 	case esv1alpha1.ConfigSuffx:
-		out, _ := yaml.Marshal(e.Spec.Rule)
+		rawmap, err := e.Spec.ConfigSetting.GetMap()
+		out, err := yaml.Marshal(rawmap)
+		if err != nil {
+			return nil, err
+		}
 		data["config.yaml"] = string(out)
 	}
 	cm := &corev1.ConfigMap{
@@ -41,8 +45,8 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 }
 
 func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
-	var config = map[string]interface{}{}
-	if m, err := e.Spec.ConfigSetting.GetMap(); m == nil || err != nil {
+	config, err := e.Spec.ConfigSetting.GetMap()
+	if config == nil || err != nil {
 		return errors.New("get config failed")
 	}
 	config["rules_folder"] = DefaultRulesFolder
@@ -67,6 +71,7 @@ func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 		delete(config, "verify_certs")
 		delete(config, "ca_certs")
 	}
+	e.Spec.ConfigSetting = esv1alpha1.NewFreeForm(config)
 	return nil
 }
 

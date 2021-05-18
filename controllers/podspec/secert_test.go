@@ -19,9 +19,7 @@ func TestGenerateCertSecret(t *testing.T) {
 			name: "test generate default secret",
 			elastalert: v1alpha1.Elastalert{
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						DefaultElasticCertName: "abc",
-					},
+					Cert: "abc",
 				},
 			},
 			want: v1.Secret{
