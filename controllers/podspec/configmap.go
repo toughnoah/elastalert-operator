@@ -2,6 +2,7 @@ package podspec
 
 import (
 	esv1alpha1 "elastalert/api/v1alpha1"
+	"errors"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +36,9 @@ func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 	var config = map[string]interface{}{}
 	var bytesConfig []byte
 	var err error
+	if e.Spec.ConfigSetting == nil {
+		return errors.New("Not found config.yaml")
+	}
 	if err = yaml.Unmarshal([]byte(e.Spec.ConfigSetting["config.yaml"]), &config); err != nil {
 		return err
 	}
