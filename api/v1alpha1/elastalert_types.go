@@ -58,8 +58,8 @@ const (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // ElastalertSpec defines the desired state of Elastalert
+// +k8s:openapi-gen=true
 type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -77,6 +77,7 @@ type ElastalertSpec struct {
 	Alert FreeForm `json:"alert,omitempty"`
 }
 
+// +k8s:openapi-gen=true
 // ElastalertStatus defines the observed state of Elastalert
 type ElastalertStatus struct {
 	Version     string             `json:"version,omitempty"`
