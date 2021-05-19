@@ -59,17 +59,22 @@ const (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // ElastalertSpec defines the desired state of Elastalert
+// +k8s:openapi-gen=true
 type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	// Elastalert rules as yaml string
-	Rule            map[string]string  `json:"rule,omitempty"`
 	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	ConfigSetting   map[string]string  `json:"config,omitempty"`
 	Image           string             `json:"image,omitempty"`
-	Cert            map[string]string  `json:"cert,omitempty"`
+	Cert            string             `json:"cert,omitempty"`
+	//+k8s:openapi-gen=true
+	ConfigSetting FreeForm `json:"config"`
+	//+k8s:openapi-gen=true
+	Rule []FreeForm `json:"rule"`
+	// +optional
+	Alert FreeForm `json:"alert,omitempty"`
 }
 
+// +k8s:openapi-gen=true
 // ElastalertStatus defines the observed state of Elastalert
 type ElastalertStatus struct {
 	Version     string             `json:"version,omitempty"`
@@ -86,7 +91,6 @@ type ElastalertStatus struct {
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="Elastalert instance's status"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="Elastalert Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-
 // Elastalert is the Schema for the elastalerts API
 type Elastalert struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -40,10 +40,9 @@ func TestApplyConfigMaps(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml":    "test: configmaps",
-						"test-rule.yaml": "test: configmaps",
-					},
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
 				},
 			},
 			c: fake.NewClientBuilder().Build(),
@@ -56,10 +55,9 @@ func TestApplyConfigMaps(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml":     "test: configmaps",
-						"test-rule1.yaml": "test: configmaps",
-					},
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
 				},
 			},
 			c: fake.NewClientBuilder().WithLists(&corev1.ConfigMapList{
@@ -113,9 +111,7 @@ func TestApplySecret(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
-					},
+					Cert: "abc",
 				},
 			},
 			c: fake.NewClientBuilder().Build(),
@@ -128,9 +124,7 @@ func TestApplySecret(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
-					},
+					Cert: "abc",
 				},
 			},
 			c: fake.NewClientBuilder().WithRuntimeObjects(&corev1.Secret{
@@ -185,9 +179,7 @@ func TestApplyDeployment(t *testing.T) {
 					Name: "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
-					},
+					Cert: "abc",
 				},
 			},
 			c: fake.NewClientBuilder().Build(),
@@ -200,9 +192,7 @@ func TestApplyDeployment(t *testing.T) {
 					Name: "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
-					},
+					Cert: "abc",
 				},
 			},
 			c: fake.NewClientBuilder().WithRuntimeObjects(
@@ -352,9 +342,7 @@ func TestReconcile(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
-					},
+					Cert: "abc",
 				},
 			},
 		},
@@ -365,14 +353,17 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace:  "esa1",
 						Name:       "my-esa",
-						Generation: int64(3),
+						Generation: int64(2),
 					},
 					Spec: v1alpha1.ElastalertSpec{
-						Cert: map[string]string{
-							"elasticCA.crt": "abc",
-						},
-						ConfigSetting: map[string]string{
-							"config.yaml": "test: abc",
+						Cert: "abc",
+						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+							"config": "test",
+						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
 						},
 					},
 				},
@@ -383,8 +374,14 @@ func TestReconcile(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
+					Cert: "abdec",
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
 					},
 				},
 			},
@@ -393,7 +390,7 @@ func TestReconcile(t *testing.T) {
 	for _, tc := range testCases {
 
 		t.Run(tc.desc, func(t *testing.T) {
-			var log = ctrl.Log.WithName("test").WithName("Elastalert")
+			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
 				Client: tc.c,
 				Log:    log,
@@ -401,7 +398,6 @@ func TestReconcile(t *testing.T) {
 			}
 			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
 			req := reconcile.Request{NamespacedName: nsn}
-
 			_, err := r.Reconcile(context.Background(), req)
 			assert.NoError(t, err)
 		})

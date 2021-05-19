@@ -3,6 +3,7 @@ package podspec
 import (
 	esv1alpha1 "elastalert/api/v1alpha1"
 	"errors"
+	"fmt"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,12 +12,21 @@ import (
 )
 
 func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suffix string) (*corev1.ConfigMap, error) {
-	var data map[string]string
+	var data = make(map[string]string)
+	var err error
 	switch suffix {
 	case esv1alpha1.RuleSuffx:
-		data = e.Spec.Rule
+		data, err = GenerateYamlMap(e.Spec.Rule)
+		if err != nil {
+			return nil, err
+		}
 	case esv1alpha1.ConfigSuffx:
-		data = e.Spec.ConfigSetting
+		rawmap, err := e.Spec.ConfigSetting.GetMap()
+		out, err := yaml.Marshal(rawmap)
+		if err != nil {
+			return nil, err
+		}
+		data["config.yaml"] = string(out)
 	}
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -25,7 +35,7 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 		},
 		Data: data,
 	}
-	err := ctrl.SetControllerReference(e, cm, Scheme)
+	err = ctrl.SetControllerReference(e, cm, Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -33,14 +43,9 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 }
 
 func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
-	var config = map[string]interface{}{}
-	var bytesConfig []byte
-	var err error
-	if e.Spec.ConfigSetting == nil {
-		return errors.New("Not found config.yaml")
-	}
-	if err = yaml.Unmarshal([]byte(e.Spec.ConfigSetting["config.yaml"]), &config); err != nil {
-		return err
+	config, err := e.Spec.ConfigSetting.GetMap()
+	if config == nil || err != nil {
+		return errors.New("get config failed")
 	}
 	config["rules_folder"] = DefaultRulesFolder
 	if config["use_ssl"] != nil && config["use_ssl"].(bool) == true && stringCert == "" {
@@ -51,7 +56,6 @@ func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 		config["verify_certs"] = true
 		config["ca_certs"] = DefaultElasticCertPath
 	}
-
 	if config["use_ssl"] != nil && config["use_ssl"].(bool) == false {
 		delete(config, "ca_certs")
 		delete(config, "verify_certs")
@@ -64,10 +68,7 @@ func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 		delete(config, "verify_certs")
 		delete(config, "ca_certs")
 	}
-	if bytesConfig, err = yaml.Marshal(config); err != nil {
-		return err
-	}
-	e.Spec.ConfigSetting["config.yaml"] = string(bytesConfig)
+	e.Spec.ConfigSetting = esv1alpha1.NewFreeForm(config)
 	return nil
 }
 
@@ -77,4 +78,46 @@ func ConfigMapsToMap(cms []corev1.ConfigMap) map[string]corev1.ConfigMap {
 		m[d.Name] = d
 	}
 	return m
+}
+
+func GenerateYamlMap(ruleArray []esv1alpha1.FreeForm) (map[string]string, error) {
+	var data = map[string]string{}
+	for _, v := range ruleArray {
+		m, err := v.GetMap()
+		if err != nil {
+			return nil, err
+		}
+		key := fmt.Sprintf("%s.yaml", m["name"])
+		out, err := yaml.Marshal(m)
+		if err != nil {
+			return nil, err
+		}
+		data[key] = string(out)
+
+	}
+	return data, nil
+}
+
+func PatchAlertSettings(e *esv1alpha1.Elastalert) error {
+	var ruleArray []esv1alpha1.FreeForm
+	alert, err := e.Spec.Alert.GetMap()
+	if err != nil {
+		return err
+	}
+	if alert == nil {
+		return nil
+	}
+	for _, v := range e.Spec.Rule {
+		rule, err := v.GetMap()
+		if err != nil {
+			return err
+		}
+		if rule["alert"] == nil {
+			MergeInterfaceMap(rule, alert)
+		}
+		ruleArray = append(ruleArray, esv1alpha1.NewFreeForm(rule))
+	}
+	e.Spec.Rule = ruleArray
+
+	return nil
 }

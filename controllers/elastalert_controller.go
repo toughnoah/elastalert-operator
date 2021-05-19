@@ -139,8 +139,12 @@ func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert
 }
 
 func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
-	stringCert := e.Spec.Cert[podspec.DefaultElasticCertName]
+	stringCert := e.Spec.Cert
 	err := podspec.PatchConfigSettings(e, stringCert)
+	if err != nil {
+		return err
+	}
+	err = podspec.PatchAlertSettings(e)
 	if err != nil {
 		return err
 	}

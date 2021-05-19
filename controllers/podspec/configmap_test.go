@@ -12,25 +12,16 @@ import (
 )
 
 var (
-	testUseSSLAndCertUndefined = `
-use_ssl: True`
-
 	wantUseSSLAndCertUndefined = `
 use_ssl: True
 rules_folder: /etc/elastalert/rules/..data/
 verify_certs: False
+`
 
-`
-	testNotUseSSL = `
-use_ssl: False
-`
 	wantNotUseSSL = `
 use_ssl: False
 rules_folder: /etc/elastalert/rules/..data/
 `
-
-	testUseSSLAndCertDefined = `
-use_ssl: True`
 
 	wantUseSSLAndCertDndefined = `
 use_ssl: True
@@ -38,8 +29,6 @@ rules_folder: /etc/elastalert/rules/..data/
 verify_certs: True
 ca_certs: /ssl/elasticCA.crt
 
-`
-	testRulesFolder = `
 `
 
 	wantRulesFolder = `
@@ -50,7 +39,6 @@ rules_folder: /etc/elastalert/rules/..data/
 func TestPatchConfigSettings(t *testing.T) {
 	testCases := []struct {
 		name       string
-		yamlString string
 		certString string
 		elastalert *esv1alpha1.Elastalert
 		want       string
@@ -58,12 +46,11 @@ func TestPatchConfigSettings(t *testing.T) {
 		{
 			name:       "test use ssl and cert undefined",
 			certString: "",
-			yamlString: testUseSSLAndCertUndefined,
 			elastalert: &esv1alpha1.Elastalert{
 				Spec: esv1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml": testUseSSLAndCertUndefined,
-					},
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
 				},
 			},
 			want: wantUseSSLAndCertUndefined,
@@ -71,12 +58,11 @@ func TestPatchConfigSettings(t *testing.T) {
 		{
 			name:       "test not use ssl",
 			certString: "",
-			yamlString: testNotUseSSL,
 			elastalert: &esv1alpha1.Elastalert{
 				Spec: esv1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml": testNotUseSSL,
-					},
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": false,
+					}),
 				},
 			},
 			want: wantNotUseSSL,
@@ -84,12 +70,12 @@ func TestPatchConfigSettings(t *testing.T) {
 		{
 			name:       "test use ssl and cert defined",
 			certString: "abc",
-			yamlString: testUseSSLAndCertDefined,
 			elastalert: &esv1alpha1.Elastalert{
 				Spec: esv1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml": testUseSSLAndCertDefined,
-					},
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl":      true,
+						"verify_certs": true,
+					}),
 				},
 			},
 			want: wantUseSSLAndCertDndefined,
@@ -97,12 +83,9 @@ func TestPatchConfigSettings(t *testing.T) {
 		{
 			name:       "test add rules folder",
 			certString: "abc",
-			yamlString: testRulesFolder,
 			elastalert: &esv1alpha1.Elastalert{
 				Spec: esv1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml": testRulesFolder,
-					},
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{}),
 				},
 			},
 			want: wantRulesFolder,
@@ -111,20 +94,12 @@ func TestPatchConfigSettings(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var want map[string]interface{}
-			var have map[string]interface{}
 			err := PatchConfigSettings(tc.elastalert, tc.certString)
-			if err != nil {
-				panic(err)
-			}
-			if err = yaml.Unmarshal([]byte(tc.want), &want); err != nil {
-				panic(err)
-			}
-			if err = yaml.Unmarshal([]byte(tc.elastalert.Spec.ConfigSetting["config.yaml"]), &have); err != nil {
-				panic(err)
-			}
-			if !reflect.DeepEqual(have, want) {
-				t.Errorf("podspec.PatchConfigSettings() = %v, want %v", have, tc.want)
-			}
+			require.NoError(t, err)
+			err = yaml.Unmarshal([]byte(tc.want), &want)
+			require.NoError(t, err)
+			have, err := tc.elastalert.Spec.ConfigSetting.GetMap()
+			require.Equal(t, want, have)
 		})
 	}
 }
@@ -188,9 +163,9 @@ func TestGenerateNewConfigmap(t *testing.T) {
 					Name: "test-elastalert",
 				},
 				Spec: esv1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml": "test: configmap",
-					},
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
 				},
 			},
 			want: corev1.ConfigMap{
@@ -208,7 +183,7 @@ func TestGenerateNewConfigmap(t *testing.T) {
 					},
 				},
 				Data: map[string]string{
-					"config.yaml": "test: configmap",
+					"config.yaml": "config: test\n",
 				},
 			},
 		},
@@ -220,11 +195,13 @@ func TestGenerateNewConfigmap(t *testing.T) {
 					Name: "test-elastalert",
 				},
 				Spec: esv1alpha1.ElastalertSpec{
-					ConfigSetting: map[string]string{
-						"config.yaml": "test: configmap",
-					},
-					Rule: map[string]string{
-						"rule.yaml": "test: rule",
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
 					},
 				},
 			},
@@ -243,7 +220,7 @@ func TestGenerateNewConfigmap(t *testing.T) {
 					},
 				},
 				Data: map[string]string{
-					"rule.yaml": "test: rule",
+					"test-elastalert.yaml": "name: test-elastalert\ntype: any\n",
 				},
 			},
 		},
@@ -255,6 +232,132 @@ func TestGenerateNewConfigmap(t *testing.T) {
 			have, err := GenerateNewConfigmap(s, &tc.elastalert, tc.suffx)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, *have)
+		})
+	}
+}
+
+func TestGenerateYamlMap(t *testing.T) {
+	testCases := []struct {
+		name     string
+		maparray []esv1alpha1.FreeForm
+		want     map[string]string
+	}{
+		{
+			name: "test generate yaml map",
+			maparray: []esv1alpha1.FreeForm{
+				esv1alpha1.NewFreeForm(map[string]interface{}{
+					"name": "test-elastalert", "type": "any",
+				}),
+				esv1alpha1.NewFreeForm(map[string]interface{}{
+					"name": "test-elastalert2", "type": "aggs",
+				}),
+			},
+			want: map[string]string{
+				"test-elastalert.yaml":  "name: test-elastalert\ntype: any\n",
+				"test-elastalert2.yaml": "name: test-elastalert2\ntype: aggs\n",
+			},
+		},
+	}
+	for _, tc := range testCases {
+		have, err := GenerateYamlMap(tc.maparray)
+		require.NoError(t, err)
+		require.Equal(t, tc.want, have)
+	}
+}
+
+func TestPatchAlertSettings(t *testing.T) {
+	testCases := []struct {
+		name       string
+		certString string
+		elastalert *esv1alpha1.Elastalert
+		want       esv1alpha1.Elastalert
+	}{
+		{
+			name:       "test use global alert",
+			certString: "",
+			elastalert: &esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+			want: esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any", "alert": []string{"post"}, "http_post_url": "https://test.com",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any", "alert": []string{"post"}, "http_post_url": "https://test.com",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+		},
+		{
+			name:       "test not global alert",
+			certString: "",
+			elastalert: &esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any", "alert": []string{"get"}, "http_post_url": "https://elatalert.com",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+			want: esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any", "alert": []string{"get"}, "http_post_url": "https://elatalert.com",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any", "alert": []string{"post"}, "http_post_url": "https://test.com",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := PatchAlertSettings(tc.elastalert)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, *tc.elastalert)
 		})
 	}
 }

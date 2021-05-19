@@ -48,26 +48,36 @@ spec:
           spec:
             description: ElastalertSpec defines the desired state of Elastalert
             properties:
+              alert:
+                description: FreeForm defines a common options parameter that maintains
+                  the hierarchical structure of the data, unlike Options which flattens
+                  the hierarchy into a key/value map where the hierarchy is converted
+                  to '.' separated items in the key.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               cert:
-                additionalProperties:
-                  type: string
-                type: object
+                type: string
               config:
-                additionalProperties:
-                  type: string
+                description: FreeForm defines a common options parameter that maintains
+                  the hierarchical structure of the data, unlike Options which flattens
+                  the hierarchy into a key/value map where the hierarchy is converted
+                  to '.' separated items in the key.
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               image:
                 type: string
               metadata:
                 description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
                 type: object
               rule:
-                additionalProperties:
-                  type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
-                  Elastalert rules as yaml string'
-                type: object
+                items:
+                  description: FreeForm defines a common options parameter that maintains
+                    the hierarchical structure of the data, unlike Options which flattens
+                    the hierarchy into a key/value map where the hierarchy is converted
+                    to '.' separated items in the key.
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                type: array
               spec:
                 description: 'Specification of the desired behavior of the pod. More
                   info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
@@ -6063,6 +6073,9 @@ spec:
                 required:
                 - containers
                 type: object
+            required:
+            - config
+            - rule
             type: object
           status:
             description: ElastalertStatus defines the observed state of Elastalert

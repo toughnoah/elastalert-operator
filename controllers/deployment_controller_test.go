@@ -33,9 +33,7 @@ func TestReCreateDeployment(t *testing.T) {
 					Name:      "my-esa",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					Cert: map[string]string{
-						"elasticCA.crt": "abc",
-					},
+					Cert: "abc",
 				},
 			},
 		},

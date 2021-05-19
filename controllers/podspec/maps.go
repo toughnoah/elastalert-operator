@@ -31,7 +31,18 @@ func Merge(dest, src map[string]string) map[string]string {
 	for k, v := range src {
 		dest[k] = v
 	}
-
+	return dest
+}
+func MergeInterfaceMap(dest, src map[string]interface{}) map[string]interface{} {
+	if dest == nil {
+		if src == nil {
+			return nil
+		}
+		dest = make(map[string]interface{}, len(src))
+	}
+	for k, v := range src {
+		dest[k] = v
+	}
 	return dest
 }
 
