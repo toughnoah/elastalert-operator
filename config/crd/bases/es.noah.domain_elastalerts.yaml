@@ -78,7 +78,6 @@ spec:
                         which flattens the hierarchy into a key/value map where the
                         hierarchy is converted to '.' separated items in the key.
                       type: object
-                    minItems: 1
                     type: array
                     x-kubernetes-preserve-unknown-fields: true
                 required:
