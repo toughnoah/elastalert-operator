@@ -54,6 +54,7 @@ spec:
                   the hierarchy into a key/value map where the hierarchy is converted
                   to '.' separated items in the key.
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               cert:
                 type: string
               image:
@@ -64,9 +65,12 @@ spec:
               settings:
                 properties:
                   config:
-                    additionalProperties:
-                      type: string
+                    description: FreeForm defines a common options parameter that
+                      maintains the hierarchical structure of the data, unlike Options
+                      which flattens the hierarchy into a key/value map where the
+                      hierarchy is converted to '.' separated items in the key.
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   rule:
                     items:
                       description: FreeForm defines a common options parameter that
@@ -76,6 +80,7 @@ spec:
                       type: object
                     minItems: 1
                     type: array
+                    x-kubernetes-preserve-unknown-fields: true
                 required:
                 - config
                 - rule
