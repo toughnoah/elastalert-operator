@@ -67,15 +67,10 @@ type ElastalertSpec struct {
 	Image           string             `json:"image,omitempty"`
 	Cert            string             `json:"cert,omitempty"`
 	//+k8s:openapi-gen=true
-	//+kubebuilder:pruning:PreserveUnknownFields
 	ConfigSetting FreeForm `json:"config"`
 	//+k8s:openapi-gen=true
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:pruning:PreserveUnknownFields
 	Rule []FreeForm `json:"rule"`
-	//+kubebuilder:validation:Optional
 	// +optional
-	//+kubebuilder:pruning:PreserveUnknownFields
 	Alert FreeForm `json:"alert,omitempty"`
 }
 
