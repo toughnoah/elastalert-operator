@@ -48,13 +48,6 @@ spec:
           spec:
             description: ElastalertSpec defines the desired state of Elastalert
             properties:
-              alert:
-                description: FreeForm defines a common options parameter that maintains
-                  the hierarchical structure of the data, unlike Options which flattens
-                  the hierarchy into a key/value map where the hierarchy is converted
-                  to '.' separated items in the key.
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
               cert:
                 type: string
               config:
@@ -69,6 +62,13 @@ spec:
               metadata:
                 description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
                 type: object
+              overall:
+                description: FreeForm defines a common options parameter that maintains
+                  the hierarchical structure of the data, unlike Options which flattens
+                  the hierarchy into a key/value map where the hierarchy is converted
+                  to '.' separated items in the key.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               rule:
                 items:
                   description: FreeForm defines a common options parameter that maintains
