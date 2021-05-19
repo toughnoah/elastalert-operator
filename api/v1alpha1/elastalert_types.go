@@ -77,7 +77,6 @@ type Settings struct {
 	//+k8s:openapi-gen=true
 	//+kubebuilder:pruning:PreserveUnknownFields
 	Config FreeForm `json:"config"`
-	//+kubebuilder:validation:MinItems=1
 	//+k8s:openapi-gen=true
 	//+kubebuilder:pruning:PreserveUnknownFields
 	Rule []FreeForm `json:"rule"`
