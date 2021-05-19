@@ -3,6 +3,7 @@ package podspec
 import (
 	esv1alpha1 "elastalert/api/v1alpha1"
 	"errors"
+	"fmt"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +88,7 @@ func GenerateYamlMap(ruleArray []esv1alpha1.FreeForm) (map[string]string, error)
 		if err != nil {
 			return nil, err
 		}
-		key := m["name"].(string) + ".yaml"
+		key := fmt.Sprintf("%s.yaml", m["name"])
 		out, err := yaml.Marshal(m)
 		if err != nil {
 			return nil, err
