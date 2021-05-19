@@ -71,7 +71,7 @@ type ElastalertSpec struct {
 	//+k8s:openapi-gen=true
 	Rule []FreeForm `json:"rule"`
 	// +optional
-	Alert FreeForm `json:"alert,omitempty"`
+	Alert FreeForm `json:"overall,omitempty"`
 }
 
 // +k8s:openapi-gen=true
