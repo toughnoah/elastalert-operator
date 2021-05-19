@@ -94,7 +94,6 @@ type ElastalertStatus struct {
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",description="Elastalert instance's status"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".status.version",description="Elastalert Version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-
 // Elastalert is the Schema for the elastalerts API
 type Elastalert struct {
 	metav1.TypeMeta   `json:",inline"`
