@@ -63,21 +63,14 @@ const (
 type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	Settings        Settings           `json:"settings"`
+	PodTemplateSpec v1.PodTemplateSpec `json:"podTemplate,omitempty"`
 	Image           string             `json:"image,omitempty"`
 	Cert            string             `json:"cert,omitempty"`
-	//+kubebuilder:validation:Optional
-	// +optional
-	Alert FreeForm `json:"alert,omitempty"`
-}
 
-type Settings struct {
-	//+k8s:openapi-gen=true
-	Config map[string]string `json:"config"`
-	//+kubebuilder:validation:MinItems=1
-	//+k8s:openapi-gen=true
-	Rule []FreeForm `json:"rule"`
+	ConfigSetting FreeForm   `json:"config"`
+	Rule          []FreeForm `json:"rule"`
+	// +optional
+	Alert FreeForm `json:"overall,omitempty"`
 }
 
 // +k8s:openapi-gen=true

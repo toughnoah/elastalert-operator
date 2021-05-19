@@ -6,10 +6,9 @@ import (
 	"time"
 )
 
-func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert, t Util) (corev1.PodTemplateSpec, error) {
+func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpec, error) {
 	var DefaultAnnotations = map[string]string{
-		"kubectl.kubernetes.io/restartedAt": t.GetUtcTimeString(),
-		"sidecar.istio.io/inject":           "false",
+		"kubectl.kubernetes.io/restartedAt": GetUtcTimeString(),
 	}
 	var DefaultCommand = []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"}
 	volumes, volumeMounts := buildVolumes(elastalert.Name)
@@ -28,7 +27,38 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert, t Util) (corev1.PodTem
 		WithInitContainers().
 		WithVolumes(volumes...).
 		WithVolumeMounts(volumeMounts...).
-		WithInitContainerDefaults()
+		WithInitContainerDefaults().
+		WithReadinessProbe(corev1.Probe{
+			Handler: corev1.Handler{
+				Exec: &corev1.ExecAction{
+					Command: []string{
+						"cat",
+						"/etc/elastalert/config.yaml",
+					},
+				},
+			},
+			InitialDelaySeconds: 20,
+			TimeoutSeconds:      3,
+			PeriodSeconds:       2,
+			SuccessThreshold:    5,
+			FailureThreshold:    3,
+		}).WithLivenessProbe(
+		corev1.Probe{
+			Handler: corev1.Handler{
+				Exec: &corev1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						"ps -ef|grep -v grep|grep elastalert",
+					},
+				},
+			},
+			InitialDelaySeconds: 50,
+			TimeoutSeconds:      3,
+			PeriodSeconds:       2,
+			SuccessThreshold:    1,
+			FailureThreshold:    3,
+		})
 	return builder.PodTemplate, nil
 }
 
@@ -126,17 +156,9 @@ func buildLabels() map[string]string {
 	return map[string]string{"app": "elastalert"}
 }
 
-type Util interface {
-	GetUtcTimeString() string
-	GetUtcTime() time.Time
-}
-
-type TimeUtil struct{}
-
-func (t *TimeUtil) GetUtcTimeString() string {
+func GetUtcTimeString() string {
 	return time.Now().UTC().Format("\"2006-01-02T15:04:05+08:00\"")
 }
-
-func (t *TimeUtil) GetUtcTime() time.Time {
+func GetUtcTime() time.Time {
 	return time.Now().UTC()
 }

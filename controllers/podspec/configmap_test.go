@@ -264,3 +264,100 @@ func TestGenerateYamlMap(t *testing.T) {
 		require.Equal(t, tc.want, have)
 	}
 }
+
+func TestPatchAlertSettings(t *testing.T) {
+	testCases := []struct {
+		name       string
+		certString string
+		elastalert *esv1alpha1.Elastalert
+		want       esv1alpha1.Elastalert
+	}{
+		{
+			name:       "test use global alert",
+			certString: "",
+			elastalert: &esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+			want: esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any", "alert": []string{"post"}, "http_post_url": "https://test.com",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any", "alert": []string{"post"}, "http_post_url": "https://test.com",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+		},
+		{
+			name:       "test not global alert",
+			certString: "",
+			elastalert: &esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any", "alert": []string{"get"}, "http_post_url": "https://elatalert.com",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+			want: esv1alpha1.Elastalert{
+				Spec: esv1alpha1.ElastalertSpec{
+					ConfigSetting: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"use_ssl": true,
+					}),
+					Rule: []esv1alpha1.FreeForm{
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert1", "type": "any", "alert": []string{"get"}, "http_post_url": "https://elatalert.com",
+						}),
+						esv1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert2", "type": "any", "alert": []string{"post"}, "http_post_url": "https://test.com",
+						}),
+					},
+					Alert: esv1alpha1.NewFreeForm(map[string]interface{}{
+						"alert": []string{"post"}, "http_post_url": "https://test.com",
+					}),
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := PatchAlertSettings(tc.elastalert)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, *tc.elastalert)
+		})
+	}
+}

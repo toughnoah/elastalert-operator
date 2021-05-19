@@ -1,15 +1,17 @@
 package podspec
 
 import (
+	"context"
 	"elastalert/api/v1alpha1"
-	mock_podspec "elastalert/controllers/podspec/mock"
-	"github.com/golang/mock/gomock"
+	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 )
 
@@ -30,6 +32,11 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					PodTemplateSpec: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"sidecar.istio.io/inject": "false",
+							},
+						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
@@ -84,6 +91,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -160,7 +198,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"test": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 						"test":                              "elastalert",
 					},
@@ -199,6 +236,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -248,6 +316,11 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					PodTemplateSpec: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"sidecar.istio.io/inject": "false",
+							},
+						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
@@ -314,6 +387,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -387,7 +491,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -449,6 +552,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Command: []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -516,7 +650,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -554,6 +687,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -600,10 +764,10 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
-			have, err := BuildPodTemplateSpec(tc.elastalert, mock_t)
+			monkey.Patch(GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
+			have, err := BuildPodTemplateSpec(tc.elastalert)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, have)
 		})
@@ -650,7 +814,6 @@ func TestBuildDeployment(t *testing.T) {
 								"app": "elastalert",
 							},
 							Annotations: map[string]string{
-								"sidecar.istio.io/inject":           "false",
 								"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 							},
 						},
@@ -688,6 +851,37 @@ func TestBuildDeployment(t *testing.T) {
 									},
 									Ports: []v1.ContainerPort{
 										{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+									},
+									ReadinessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"cat",
+													"/etc/elastalert/config.yaml",
+												},
+											},
+										},
+										InitialDelaySeconds: 20,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    5,
+										FailureThreshold:    3,
+									},
+									LivenessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"sh",
+													"-c",
+													"ps -ef|grep -v grep|grep elastalert",
+												},
+											},
+										},
+										InitialDelaySeconds: 50,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
 									},
 								},
 							},
@@ -736,10 +930,10 @@ func TestBuildDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
-			have, err := BuildDeployment(tc.elastalert, mock_t)
+			monkey.Patch(GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
+			have, err := BuildDeployment(tc.elastalert)
 			require.NoError(t, err)
 
 			have.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = "2021-05-17T01:38:44+08:00"
@@ -797,7 +991,6 @@ func TestGenerateNewDeployment(t *testing.T) {
 								"app": "elastalert",
 							},
 							Annotations: map[string]string{
-								"sidecar.istio.io/inject":           "false",
 								"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 							},
 						},
@@ -835,6 +1028,37 @@ func TestGenerateNewDeployment(t *testing.T) {
 									},
 									Ports: []v1.ContainerPort{
 										{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+									},
+									ReadinessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"cat",
+													"/etc/elastalert/config.yaml",
+												},
+											},
+										},
+										InitialDelaySeconds: 20,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    5,
+										FailureThreshold:    3,
+									},
+									LivenessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"sh",
+													"-c",
+													"ps -ef|grep -v grep|grep elastalert",
+												},
+											},
+										},
+										InitialDelaySeconds: 50,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
 									},
 								},
 							},
@@ -882,14 +1106,95 @@ func TestGenerateNewDeployment(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
 			s := scheme.Scheme
 			s.AddKnownTypes(v1.SchemeGroupVersion, &v1alpha1.Elastalert{})
-			have, err := GenerateNewDeployment(s, &tc.elastalert, mock_t)
+			monkey.Patch(GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
+			have, err := GenerateNewDeployment(s, &tc.elastalert)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, *have)
 		})
 	}
+}
+
+func TestWaitForStability(t *testing.T) {
+	var replicas int32 = 1
+	testCases := []struct {
+		name string
+		c    client.Client
+		dep  appsv1.Deployment
+		want bool
+	}{
+		{
+			name: "test success",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test-elastalert",
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+					},
+					Status: appsv1.DeploymentStatus{
+						AvailableReplicas: replicas,
+					},
+				}).Build(),
+			dep: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test-elastalert",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "test failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "test-elastalert",
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+					},
+					Status: appsv1.DeploymentStatus{
+						AvailableReplicas: 0,
+					},
+				}).Build(),
+			dep: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test-elastalert",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "test no object failed",
+			c:    fake.NewClientBuilder().Build(),
+			dep: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test-elastalert",
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tc := range testCases {
+		s := scheme.Scheme
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
+		t.Run(tc.name, func(t *testing.T) {
+			err := WaitForStability(tc.c, context.Background(), tc.dep)
+			if tc.want {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+
 }

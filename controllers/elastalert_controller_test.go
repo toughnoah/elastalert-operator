@@ -4,14 +4,15 @@ import (
 	"context"
 	"elastalert/api/v1alpha1"
 	"elastalert/controllers/podspec"
-	mock_podspec "elastalert/controllers/podspec/mock"
-	"github.com/golang/mock/gomock"
+	"errors"
+	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -211,7 +212,6 @@ func TestApplyDeployment(t *testing.T) {
 									"app": "elastalert",
 								},
 								Annotations: map[string]string{
-									"sidecar.istio.io/inject":           "false",
 									"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 								},
 							},
@@ -306,14 +306,14 @@ func TestApplyDeployment(t *testing.T) {
 				Scheme: s,
 			}
 
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
+			monkey.Patch(podspec.GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
 
 			dep := appsv1.Deployment{}
 			r.Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
 			r.Scheme.AddKnownTypes(appsv1.SchemeGroupVersion, &dep)
-			_, err := applyDeployment(r.Client, r.Scheme, context.Background(), &tc.elastalert, mock_t)
+			_, err := applyDeployment(r.Client, r.Scheme, context.Background(), &tc.elastalert)
 			assert.NoError(t, err)
 			err = r.Client.Get(context.Background(), types.NamespacedName{
 				Namespace: tc.elastalert.Namespace,
@@ -332,9 +332,11 @@ func TestReconcile(t *testing.T) {
 		desc       string
 		elastalert v1alpha1.Elastalert
 		c          client.Client
+		testFunc   func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) error
+		result     bool
 	}{
 		{
-			desc: "test elastalert reconcile",
+			desc: "test elastalert reconcile delete elastalert",
 			c:    fake.NewClientBuilder().Build(),
 			elastalert: v1alpha1.Elastalert{
 				ObjectMeta: metav1.ObjectMeta{
@@ -345,9 +347,10 @@ func TestReconcile(t *testing.T) {
 					Cert: "abc",
 				},
 			},
+			result: true,
 		},
 		{
-			desc: "test elastalert reconcile 1",
+			desc: "test elastalert reconcile success",
 			c: fake.NewClientBuilder().WithRuntimeObjects(
 				&v1alpha1.Elastalert{
 					ObjectMeta: metav1.ObjectMeta{
@@ -385,11 +388,97 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 			},
+			result: true,
+		},
+		{
+			desc: "test elastalert apply secret failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:  "esa1",
+						Name:       "my-esa",
+						Generation: int64(2),
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						Cert: "abc",
+						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+							"config": "test",
+						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
+						},
+					},
+				},
+			).Build(),
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					Cert: "abdec",
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
+				},
+			},
+			testFunc: applySecret,
+			result:   false,
+		},
+		{
+			desc: "test elastalert apply configmap failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:  "esa1",
+						Name:       "my-esa",
+						Generation: int64(2),
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						Cert: "abc",
+						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+							"config": "test",
+						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
+						},
+					},
+				},
+			).Build(),
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					Cert: "abdec",
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
+				},
+			},
+			testFunc: applyConfigMaps,
+			result:   false,
 		},
 	}
 	for _, tc := range testCases {
-
 		t.Run(tc.desc, func(t *testing.T) {
+			defer monkey.Unpatch(tc.testFunc)
+			defer monkey.Unpatch(UpdateElastalertStatus)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
 				Client: tc.c,
@@ -398,8 +487,103 @@ func TestReconcile(t *testing.T) {
 			}
 			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
 			req := reconcile.Request{NamespacedName: nsn}
-			_, err := r.Reconcile(context.Background(), req)
-			assert.NoError(t, err)
+			if tc.result {
+				_, err := r.Reconcile(context.Background(), req)
+				assert.NoError(t, err)
+			} else {
+				monkey.Patch(tc.testFunc, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) error {
+					return errors.New("test")
+				})
+				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+					return errors.New("test update failed")
+				})
+				_, err := r.Reconcile(context.Background(), req)
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestReconcileApplyDeploymentFailed(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	testCases := []struct {
+		desc       string
+		elastalert v1alpha1.Elastalert
+		c          client.Client
+		testFunc   func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) (*appsv1.Deployment, error)
+		result     bool
+	}{
+
+		{
+			desc: "test elastalert apply deployment failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:  "esa1",
+						Name:       "my-esa",
+						Generation: int64(2),
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						Cert: "abc",
+						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+							"config": "test",
+						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
+						},
+					},
+				},
+			).Build(),
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					Cert: "abdec",
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
+				},
+			},
+			testFunc: applyDeployment,
+			result:   false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			defer monkey.Unpatch(tc.testFunc)
+			defer monkey.Unpatch(UpdateElastalertStatus)
+			log := ctrl.Log.WithName("test").WithName("Elastalert")
+			r := &ElastalertReconciler{
+				Client: tc.c,
+				Log:    log,
+				Scheme: s,
+			}
+			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
+			req := reconcile.Request{NamespacedName: nsn}
+			if tc.result {
+				_, err := r.Reconcile(context.Background(), req)
+				assert.NoError(t, err)
+			} else {
+				monkey.Patch(tc.testFunc, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
+					return nil, errors.New("test")
+				})
+
+				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+					return errors.New("test update failed")
+				})
+				_, err := r.Reconcile(context.Background(), req)
+				assert.Error(t, err)
+			}
 		})
 	}
 }
@@ -497,6 +681,60 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "test to remove elasalert success status",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "esa1",
+						Name:      "my-esa",
+					},
+					Status: v1alpha1.ElastalertStatus{
+						Condictions: []metav1.Condition{
+							{
+								Type:               "Progressing",
+								Status:             "True",
+								ObservedGeneration: int64(1),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								Reason:             "NewElastAlertAvailable",
+								Message:            "ElastAlert my-esa has successfully progressed.",
+							},
+						},
+					},
+				}).Build(),
+			cond: metav1.Condition{
+				Type:               v1alpha1.ElastAlertUnAvailableType,
+				Status:             v1alpha1.ElastAlertUnAvailableStatus,
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				ObservedGeneration: 1,
+				Reason:             v1alpha1.ElastAlertUnAvailableReason,
+				Message:            "Failed to apply ElastAlert my-esa resources.",
+			},
+			want: v1alpha1.Elastalert{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Elastalert",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Status: v1alpha1.ElastalertStatus{
+					Version: "v1.0",
+					Phase:   "FAILED",
+					Condictions: []metav1.Condition{
+						{
+							Type:               "Stopped",
+							Status:             "False",
+							ObservedGeneration: int64(1),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							Reason:             "ElastAlertUnAvailable",
+							Message:            "Failed to apply ElastAlert my-esa resources.",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -548,11 +786,10 @@ func TestNewCondition(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTime().Return(time.Unix(0, 1233810057012345600))
-
-			have := NewCondition(&tc.elastalert, tc.flag, mock_t)
+			monkey.Patch(podspec.GetUtcTime, func() time.Time {
+				return time.Unix(0, 1233810057012345600)
+			})
+			have := NewCondition(&tc.elastalert, tc.flag)
 			require.Equal(t, tc.want, *have)
 		})
 	}
@@ -654,10 +891,11 @@ func TestUpdateElastalertStatus(t *testing.T) {
 				Namespace: "esa1",
 				Name:      "my-esa",
 			}, &esa)
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTime().Return(time.Unix(0, 1233810057012345600))
-			err = UpdateElastalertStatus(r.Client, context.Background(), &esa, tc.flag, mock_t)
+
+			monkey.Patch(podspec.GetUtcTime, func() time.Time {
+				return time.Unix(0, 1233810057012345600)
+			})
+			err = UpdateElastalertStatus(r.Client, context.Background(), &esa, tc.flag)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want.Status, esa.Status)
 		})
