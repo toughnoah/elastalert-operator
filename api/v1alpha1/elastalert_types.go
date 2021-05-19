@@ -70,6 +70,7 @@ type ElastalertSpec struct {
 	//+kubebuilder:pruning:PreserveUnknownFields
 	ConfigSetting FreeForm `json:"config"`
 	//+k8s:openapi-gen=true
+	//+kubebuilder:validation:Optional
 	//+kubebuilder:pruning:PreserveUnknownFields
 	Rule []FreeForm `json:"rule"`
 	//+kubebuilder:validation:Optional
