@@ -66,10 +66,9 @@ type ElastalertSpec struct {
 	//+kubebuilder:validation:MinItems=1
 	Rule            []FreeForm         `json:"rule"`
 	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	//+kubebuilder:validation:Optional
-	ConfigSetting FreeForm `json:"config"`
-	Image         string   `json:"image,omitempty"`
-	Cert          string   `json:"cert,omitempty"`
+	ConfigSetting   FreeForm           `json:"config"`
+	Image           string             `json:"image,omitempty"`
+	Cert            string             `json:"cert,omitempty"`
 	//+kubebuilder:validation:Optional
 	// +optional
 	Alert FreeForm `json:"alert,omitempty"`
