@@ -76,8 +76,8 @@ spec:
                     the hierarchy into a key/value map where the hierarchy is converted
                     to '.' separated items in the key.
                   type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 type: array
-                x-kubernetes-preserve-unknown-fields: true
               spec:
                 description: 'Specification of the desired behavior of the pod. More
                   info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
@@ -6075,6 +6075,7 @@ spec:
                 type: object
             required:
             - config
+            - rule
             type: object
           status:
             description: ElastalertStatus defines the observed state of Elastalert
