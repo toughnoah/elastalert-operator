@@ -144,6 +144,10 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 	if err != nil {
 		return err
 	}
+	err = podspec.PatchAlertSettings(e)
+	if err != nil {
+		return err
+	}
 	list := &corev1.ConfigMapList{}
 	opts := client.InNamespace(e.Namespace)
 	if err = c.List(ctx, list, opts); err != nil {

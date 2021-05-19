@@ -56,7 +56,6 @@ func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 		config["verify_certs"] = true
 		config["ca_certs"] = DefaultElasticCertPath
 	}
-
 	if config["use_ssl"] != nil && config["use_ssl"].(bool) == false {
 		delete(config, "ca_certs")
 		delete(config, "verify_certs")
@@ -97,4 +96,28 @@ func GenerateYamlMap(ruleArray []esv1alpha1.FreeForm) (map[string]string, error)
 
 	}
 	return data, nil
+}
+
+func PatchAlertSettings(e *esv1alpha1.Elastalert) error {
+	var ruleArray []esv1alpha1.FreeForm
+	alert, err := e.Spec.Alert.GetMap()
+	if err != nil {
+		return err
+	}
+	if alert == nil {
+		return nil
+	}
+	for _, v := range e.Spec.Rule {
+		rule, err := v.GetMap()
+		if err != nil {
+			return err
+		}
+		if rule["alert"] == nil {
+			MergeInterfaceMap(rule, alert)
+		}
+		ruleArray = append(ruleArray, esv1alpha1.NewFreeForm(rule))
+	}
+	e.Spec.Rule = ruleArray
+
+	return nil
 }
