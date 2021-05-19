@@ -74,7 +74,7 @@ type ElastalertSpec struct {
 
 type Settings struct {
 	//+k8s:openapi-gen=true
-	Config map[string]string `json:"config"`
+	Config FreeForm `json:"config"`
 	//+kubebuilder:validation:MinItems=1
 	//+k8s:openapi-gen=true
 	Rule []FreeForm `json:"rule"`
