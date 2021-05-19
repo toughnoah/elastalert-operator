@@ -7,7 +7,7 @@ import (
 // +kubebuilder:validation:Type=object
 // FreeForm defines a common options parameter that maintains the hierarchical structure of the data, unlike Options which flattens the hierarchy into a key/value map where the hierarchy is converted to '.' separated items in the key.
 type FreeForm struct {
-	ff   map[string]string `json:"-"`
+	FF   map[string]string `json:"-"`
 	json *[]byte           `json:"-"`
 }
 
