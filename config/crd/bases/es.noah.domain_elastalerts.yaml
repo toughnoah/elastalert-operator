@@ -6073,6 +6073,8 @@ spec:
                 required:
                 - containers
                 type: object
+            required:
+            - rule
             type: object
           status:
             description: ElastalertStatus defines the observed state of Elastalert
