@@ -65,7 +65,7 @@ type ElastalertSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	//+kubebuilder:validation:MinItems=1
 	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	Settings        Setting            `json:"config"`
+	Settings        Settings           `json:"settings"`
 	Image           string             `json:"image,omitempty"`
 	Cert            string             `json:"cert,omitempty"`
 	//+kubebuilder:validation:Optional
@@ -73,7 +73,7 @@ type ElastalertSpec struct {
 	Alert FreeForm `json:"alert,omitempty"`
 }
 
-type Setting struct {
+type Settings struct {
 	Config FreeForm   `json:"config"`
 	Rule   []FreeForm `json:"rule"`
 }
