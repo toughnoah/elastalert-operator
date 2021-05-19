@@ -82,12 +82,13 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 			return false, err
 		}
 		seen = true
+		fmt.Println(d.Status.ReadyReplicas)
+		fmt.Println(d.Status.Replicas)
 		if d.Status.ReadyReplicas != d.Status.Replicas {
 			//once.Do(func() {
 			//	"Waiting for deployment to stabilize"
 			//})
-			fmt.Println(d.Status.ReadyReplicas)
-			fmt.Println(d.Status.Replicas)
+
 			return false, nil
 		}
 
