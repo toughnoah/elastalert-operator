@@ -64,14 +64,18 @@ type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	//+kubebuilder:validation:MinItems=1
-	Rule            []FreeForm         `json:"rule"`
 	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	ConfigSetting   FreeForm           `json:"config"`
+	Settings        Setting            `json:"config"`
 	Image           string             `json:"image,omitempty"`
 	Cert            string             `json:"cert,omitempty"`
 	//+kubebuilder:validation:Optional
 	// +optional
 	Alert FreeForm `json:"alert,omitempty"`
+}
+
+type Setting struct {
+	Config FreeForm   `json:"config"`
+	Rule   []FreeForm `json:"rule"`
 }
 
 // +k8s:openapi-gen=true
