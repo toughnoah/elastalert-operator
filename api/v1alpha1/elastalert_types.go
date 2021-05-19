@@ -64,22 +64,18 @@ type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
-	Settings        Settings           `json:"settings"`
 	Image           string             `json:"image,omitempty"`
 	Cert            string             `json:"cert,omitempty"`
+	//+k8s:openapi-gen=true
+	//+kubebuilder:pruning:PreserveUnknownFields
+	ConfigSetting FreeForm `json:"config"`
+	//+k8s:openapi-gen=true
+	//+kubebuilder:pruning:PreserveUnknownFields
+	Rule []FreeForm `json:"rule"`
 	//+kubebuilder:validation:Optional
 	// +optional
 	//+kubebuilder:pruning:PreserveUnknownFields
 	Alert FreeForm `json:"alert,omitempty"`
-}
-
-type Settings struct {
-	//+k8s:openapi-gen=true
-	//+kubebuilder:pruning:PreserveUnknownFields
-	Config FreeForm `json:"config"`
-	//+k8s:openapi-gen=true
-	//+kubebuilder:pruning:PreserveUnknownFields
-	Rule []FreeForm `json:"rule"`
 }
 
 // +k8s:openapi-gen=true
