@@ -76,6 +76,7 @@ spec:
                     the hierarchy into a key/value map where the hierarchy is converted
                     to '.' separated items in the key.
                   type: object
+                minItems: 1
                 type: array
               spec:
                 description: 'Specification of the desired behavior of the pod. More
@@ -6073,7 +6074,6 @@ spec:
                 - containers
                 type: object
             required:
-            - config
             - rule
             type: object
           status:
