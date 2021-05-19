@@ -57,33 +57,27 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               cert:
                 type: string
+              config:
+                description: FreeForm defines a common options parameter that maintains
+                  the hierarchical structure of the data, unlike Options which flattens
+                  the hierarchy into a key/value map where the hierarchy is converted
+                  to '.' separated items in the key.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               image:
                 type: string
               metadata:
                 description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
                 type: object
-              settings:
-                properties:
-                  config:
-                    description: FreeForm defines a common options parameter that
-                      maintains the hierarchical structure of the data, unlike Options
-                      which flattens the hierarchy into a key/value map where the
-                      hierarchy is converted to '.' separated items in the key.
-                    type: object
-                    x-kubernetes-preserve-unknown-fields: true
-                  rule:
-                    items:
-                      description: FreeForm defines a common options parameter that
-                        maintains the hierarchical structure of the data, unlike Options
-                        which flattens the hierarchy into a key/value map where the
-                        hierarchy is converted to '.' separated items in the key.
-                      type: object
-                    type: array
-                    x-kubernetes-preserve-unknown-fields: true
-                required:
-                - config
-                - rule
-                type: object
+              rule:
+                items:
+                  description: FreeForm defines a common options parameter that maintains
+                    the hierarchical structure of the data, unlike Options which flattens
+                    the hierarchy into a key/value map where the hierarchy is converted
+                    to '.' separated items in the key.
+                  type: object
+                type: array
+                x-kubernetes-preserve-unknown-fields: true
               spec:
                 description: 'Specification of the desired behavior of the pod. More
                   info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
@@ -6080,7 +6074,8 @@ spec:
                 - containers
                 type: object
             required:
-            - settings
+            - config
+            - rule
             type: object
           status:
             description: ElastalertStatus defines the observed state of Elastalert
