@@ -90,7 +90,7 @@ config.yaml  rules
 error-message.yaml      error-status-code.yaml
 ```
 ## What's more
-### Cert Specification:
+### Elasticsearch Cert 
 ```
 kubectl apply -n alert -f - <<EOF
 apiVersion: es.noah.domain/v1alpha1
