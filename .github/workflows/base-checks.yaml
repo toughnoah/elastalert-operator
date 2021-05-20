@@ -23,4 +23,4 @@ jobs:
       - name: "upload test coverage report"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: ./.ci/upload-test-coverage.sh
+        run: curl -s https://codecov.io/bash
