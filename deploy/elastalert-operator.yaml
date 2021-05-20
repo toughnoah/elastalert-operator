@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastalert-operator
+  labels:
+    app: elastalert-operator
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elastalert-operator
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: elastalert-operator
+        version: v1
+    spec:
+      serviceAccountName: elastalert-operator
+      containers:
+      - name: elastalert-operator
+        image: toughnoah/elastalert-operator:v1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
