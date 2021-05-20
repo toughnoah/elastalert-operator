@@ -22,7 +22,7 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Request) (ctrl.Result, error) {
-	var t podspec.Util = &podspec.TimeUtil{}
+	var u podspec.Util = &podspec.TimeUtil{}
 	log := r.Log.WithValues("deployment", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
@@ -35,11 +35,18 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get deployment from server")
 		return ctrl.Result{}, err
 	}
-	if err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert, t); err != nil {
+	dep, err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert, u)
+	if err != nil {
 		log.Error(err, "Failed to recreate Deployment by steps", "Deployment.Namespace", req.Namespace)
-		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, t); err != nil {
+		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, u); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
+		}
+		if err := podspec.WaitForStability(r.Client, ctx, *dep); err != nil {
+			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, u); err != nil {
+				log.Error(err, "Failed to update elastalert status")
+				return ctrl.Result{}, err
+			}
 		}
 		return ctrl.Result{}, err
 	}
@@ -64,7 +71,7 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 //	return reconciliations
 //}
 
-func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert, t podspec.Util) error {
+func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert, u podspec.Util) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	err := c.Get(ctx,
 		types.NamespacedName{
@@ -73,16 +80,19 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Con
 		},
 		deploy)
 	if err != nil && k8serrors.IsNotFound(err) {
-		deploy, err = podspec.GenerateNewDeployment(Scheme, e, t)
+		deploy, err = podspec.GenerateNewDeployment(Scheme, e, u)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err = applySecret(c, Scheme, ctx, e); err != nil {
-			return err
+			return nil, err
+		}
+		if err = applyConfigMaps(c, Scheme, ctx, e); err != nil {
+
 		}
 		if err = c.Create(ctx, deploy); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return deploy, nil
 }
