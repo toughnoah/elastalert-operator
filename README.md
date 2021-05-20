@@ -134,7 +134,7 @@ EOF
 ```
 This action will create a new `secret` mounted as `/ssl/elasticCA.crt`
 
-###Overall
+### Overall
 `overall` is used to config global alert settings. If you defined `alert` in a rule, it will override `overall` settings.
 ```
 kubectl apply -n alert -f - <<EOF
@@ -194,7 +194,7 @@ spec:
 EOF
 ```
 
-###Notice
+### Notice
 You don't have to specify `rules_folder` in config section, because operator will auto patch `rules_folder: /etc/elastalert/rules/..data/` for your config.
 The reason why have to be `..data/` is the workaround when the configmap is mounted as file(such as `/etc/elastalert/rules/test.yaml`) in a pod, it will create a soft-link to `/etc/elastalert/rules/..data/test.yaml`.
 That is to say, you will receive duplicated rules name error that both files in `rules` and `..data` would be loaded if you specify merely `rules_folder: /etc/elastalert/rules`
