@@ -54,7 +54,7 @@ func TestReCreateDeployment(t *testing.T) {
 			dep := appsv1.Deployment{}
 			r.Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
 			r.Scheme.AddKnownTypes(appsv1.SchemeGroupVersion, &dep)
-			err := recreateDeployment(cl, r.Scheme, context.Background(), &tc.elastalert, mock_t)
+			_, err := recreateDeployment(cl, r.Scheme, context.Background(), &tc.elastalert, mock_t)
 			assert.NoError(t, err)
 			err = cl.Get(context.Background(), types.NamespacedName{
 				Namespace: tc.elastalert.Namespace,

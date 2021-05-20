@@ -63,7 +63,7 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 	// the images, subsequent runs should take only a few seconds
 	seen := false
 	//once := &sync.Once{}
-	return wait.PollImmediate(time.Second, 3*time.Minute, func() (done bool, err error) {
+	return wait.PollImmediate(time.Second, 10*time.Second, func() (done bool, err error) {
 		d := &appsv1.Deployment{}
 		if err := c.Get(ctx, types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, d); err != nil {
 			if k8serrors.IsNotFound(err) {
