@@ -19,8 +19,8 @@ jobs:
           go-version: 1.15
 
       - name: Test
-        run: go test -v ./...
+        run: go test ./... -race -coverprofile=coverage.txt -covermode=atomic
       - name: "upload test coverage report"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: curl -s https://codecov.io/bash
+        run: bash <(curl -s https://codecov.io/bash)
