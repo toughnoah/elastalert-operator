@@ -33,6 +33,11 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					PodTemplateSpec: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"sidecar.istio.io/inject": "false",
+							},
+						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
@@ -49,6 +54,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
+						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -249,6 +255,11 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					PodTemplateSpec: v1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"sidecar.istio.io/inject": "false",
+							},
+						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
@@ -275,6 +286,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
+						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
