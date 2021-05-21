@@ -108,7 +108,7 @@ spec:
   overall:
     alert:
       ...
-  Cert: |-
+  cert: |-
         -----BEGIN CERTIFICATE-----
       MIIDYjCCAkqgAwIBAgIRAPUiB7MQDUsQlH5qOvwzaeQwDQYJKoZIhvcNAQELBQAw
       OzEZMBcGA1UECxMQc2ctZWxhc3RpY3NlYXJjaDEeMBwGA1UEAxMVc2ctZWxhc3Rp
