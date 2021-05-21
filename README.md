@@ -180,19 +180,21 @@ spec:
     ...
   cert: |-
     ...
-  spec:
-    containers:
-    - name: elastalert
-      imagePullPolicy: Always
-      resources:
-        limits:
-          cpu: "2000m"
-          memory: "4Gi"
-        requests:
-          cpu: "500m"
-          memory: "1Gi" 
+  podTemplate:
+      spec:
+        containers:
+        - name: elastalert
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+            requests:
+              cpu: "500m"
+              memory: "1Gi" 
 EOF
 ```
+You can override the default command here.
 
 ### Notice
 You don't have to specify `rules_folder` in config section, because operator will auto patch `rules_folder: /etc/elastalert/rules/..data/` for your config.

@@ -63,7 +63,7 @@ const (
 type ElastalertSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	PodTemplateSpec v1.PodTemplateSpec `json:",inline"`
+	PodTemplateSpec v1.PodTemplateSpec `json:"podTemplate,inline"`
 	Image           string             `json:"image,omitempty"`
 	Cert            string             `json:"cert,omitempty"`
 	//+k8s:openapi-gen=true

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: elastalert-operator
+  namespace: alert
   labels:
     app: elastalert-operator
     version: v1
