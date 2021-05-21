@@ -6309,6 +6309,7 @@ spec:
                     - containers
                     type: object
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               rule:
                 items:
                   description: FreeForm defines a common options parameter that maintains
