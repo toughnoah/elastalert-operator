@@ -125,11 +125,11 @@ func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert
 	case esv1alpha1.ElastAlertAvailableType:
 		e.Status.Phase = esv1alpha1.ElastAlertPhraseSucceeded
 		meta.SetStatusCondition(&e.Status.Condictions, condition)
-		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertPhraseFailed)
+		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertUnAvailableType)
 	case esv1alpha1.ElastAlertUnAvailableType:
 		e.Status.Phase = esv1alpha1.ElastAlertPhraseFailed
 		meta.SetStatusCondition(&e.Status.Condictions, condition)
-		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertPhraseSucceeded)
+		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	}
 	e.Status.Version = esv1alpha1.ElastAlertVersion
 	if err := c.Status().Update(ctx, e); err != nil {

@@ -496,6 +496,60 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "test to remove elasalert success status",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "esa1",
+						Name:      "my-esa",
+					},
+					Status: v1alpha1.ElastalertStatus{
+						Condictions: []metav1.Condition{
+							{
+								Type:               "Progressing",
+								Status:             "True",
+								ObservedGeneration: int64(1),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								Reason:             "NewElastAlertAvailable",
+								Message:            "ElastAlert my-esa has successfully progressed.",
+							},
+						},
+					},
+				}).Build(),
+			cond: metav1.Condition{
+				Type:               v1alpha1.ElastAlertUnAvailableType,
+				Status:             v1alpha1.ElastAlertUnAvailableStatus,
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				ObservedGeneration: 1,
+				Reason:             v1alpha1.ElastAlertUnAvailableReason,
+				Message:            "Failed to apply ElastAlert my-esa resources.",
+			},
+			want: v1alpha1.Elastalert{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Elastalert",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Status: v1alpha1.ElastalertStatus{
+					Version: "v1.0",
+					Phase:   "FAILED",
+					Condictions: []metav1.Condition{
+						{
+							Type:               "Stopped",
+							Status:             "False",
+							ObservedGeneration: int64(1),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							Reason:             "ElastAlertUnAvailable",
+							Message:            "Failed to apply ElastAlert my-esa resources.",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
