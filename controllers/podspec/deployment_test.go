@@ -49,7 +49,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -163,7 +162,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"test": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 						"test":                              "elastalert",
 					},
@@ -277,7 +275,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -390,7 +387,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -519,7 +515,6 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 						"app": "elastalert",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject":           "false",
 						"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 					},
 				},
@@ -653,7 +648,6 @@ func TestBuildDeployment(t *testing.T) {
 								"app": "elastalert",
 							},
 							Annotations: map[string]string{
-								"sidecar.istio.io/inject":           "false",
 								"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 							},
 						},
@@ -800,7 +794,6 @@ func TestGenerateNewDeployment(t *testing.T) {
 								"app": "elastalert",
 							},
 							Annotations: map[string]string{
-								"sidecar.istio.io/inject":           "false",
 								"kubectl.kubernetes.io/restartedAt": "2021-05-17T01:38:44+08:00",
 							},
 						},

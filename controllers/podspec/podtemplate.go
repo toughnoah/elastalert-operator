@@ -9,7 +9,6 @@ import (
 func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert, t Util) (corev1.PodTemplateSpec, error) {
 	var DefaultAnnotations = map[string]string{
 		"kubectl.kubernetes.io/restartedAt": t.GetUtcTimeString(),
-		"sidecar.istio.io/inject":           "false",
 	}
 	var DefaultCommand = []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"}
 	volumes, volumeMounts := buildVolumes(elastalert.Name)
