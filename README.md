@@ -202,4 +202,4 @@ The reason why have to be `..data/` is the workaround when the configmap is moun
 That is to say, you will receive duplicated rules name error that both files in `rules` and `..data` would be loaded if you specify merely `rules_folder: /etc/elastalert/rules`
 
 ## Contact Me
-Any advice is welcome! Please email to Noah.Lu@connext.com.cn
+Any advice is welcome! Please email to toughnoah@163.com
