@@ -43,13 +43,15 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		}
 	}
 	if dep != nil {
+		log.Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
 		if err := podspec.WaitForStability(r.Client, ctx, *dep); err != nil {
-			log.Error(err, "Failed to stablized Deployment.", "Deployment.Namespace", req.Namespace)
+			log.Error(err, "Failed to stabilized Deployment.", "Deployment.Namespace", req.Namespace)
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
 		}
+		log.Info("Deployment, stabilized.", "Deployment.Namespace", req.Namespace)
 	}
 	return ctrl.Result{}, nil
 }

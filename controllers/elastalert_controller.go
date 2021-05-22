@@ -87,7 +87,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			return ctrl.Result{}, err
 		}
 		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
-			log.Error(err, "Deployment stabiliz failed ", "Deployment.Namespace", req.Namespace)
+			log.Error(err, "Deployment stabilize failed ", "Deployment.Namespace", req.Namespace)
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
