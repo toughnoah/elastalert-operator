@@ -83,3 +83,25 @@ func TestToMap(t *testing.T) {
 		}
 	}
 }
+
+func TestFreeForm_GetStringMap(t *testing.T) {
+	tests := []struct {
+		m        map[string]interface{}
+		expected map[string]string
+		err      string
+	}{
+		{expected: map[string]string{}},
+		{m: map[string]interface{}{"foo": "bar$"}, expected: map[string]string{"foo": "bar$"}},
+		{m: map[string]interface{}{"foo": "true"}, expected: map[string]string{"foo": "true"}},
+	}
+	for _, test := range tests {
+		f := NewFreeForm(test.m)
+		got, err := f.GetStringMap()
+		if test.err != "" {
+			assert.EqualError(t, err, test.err)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, got)
+		}
+	}
+}

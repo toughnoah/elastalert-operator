@@ -45,7 +45,6 @@ type ElastalertReconciler struct {
 //+kubebuilder:rbac:groups=es.noah.domain,resources=elastalerts/finalizers,verbs=update
 func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("elastalert", req.NamespacedName)
-	var util podspec.Util = &podspec.TimeUtil{}
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
 	if err != nil {
@@ -61,7 +60,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
 		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply Secret", "Secret.Namespace", req.Namespace)
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, util); err != nil {
+			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
@@ -71,17 +70,17 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 
 		if err := applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, util); err != nil {
+			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{}, err
 		}
 		log.Info("Apply configmaps success", "Secret.Namespace", req.Namespace)
-		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert, util)
+		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert)
 		if err != nil {
 			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, util); err != nil {
+			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
@@ -89,14 +88,14 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		}
 		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
 			log.Error(err, "Deployment stabiliz failed ", "Deployment.Namespace", req.Namespace)
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed, util); err != nil {
+			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
 		}
 		log.Info("Deployment has stabilized", "Deployment.Namespace", req.Namespace)
 
-		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess, util); err != nil {
+		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
@@ -112,8 +111,8 @@ func (r *ElastalertReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&esv1alpha1.Elastalert{}).
 		Complete(r)
 }
-func UpdateElastalertStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, flag string, t podspec.Util) error {
-	condition := NewCondition(e, flag, t)
+func UpdateElastalertStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, flag string) error {
+	condition := NewCondition(e, flag)
 	if err := UpdateStatus(c, ctx, e, *condition); err != nil {
 		return err
 	}
@@ -215,7 +214,7 @@ func applySecret(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e
 	return nil
 }
 
-func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert, u podspec.Util) (*appsv1.Deployment, error) {
+func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	err := c.Get(ctx,
 		types.NamespacedName{
@@ -224,7 +223,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}, deploy)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			deploy, err = podspec.GenerateNewDeployment(Scheme, e, u)
+			deploy, err = podspec.GenerateNewDeployment(Scheme, e)
 			if err != nil {
 				return nil, err
 			}
@@ -236,7 +235,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}
 		return nil, err
 	} else {
-		deploy, err = podspec.GenerateNewDeployment(Scheme, e, u)
+		deploy, err = podspec.GenerateNewDeployment(Scheme, e)
 		if err != nil {
 			return nil, err
 		}
@@ -248,7 +247,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 	}
 }
 
-func NewCondition(e *esv1alpha1.Elastalert, flag string, t podspec.Util) *metav1.Condition {
+func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 	var condition *metav1.Condition
 	switch flag {
 	case esv1alpha1.ActionSuccess:
@@ -256,7 +255,7 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string, t podspec.Util) *metav1
 			Type:               esv1alpha1.ElastAlertAvailableType,
 			Status:             esv1alpha1.ElastAlertAvailableStatus,
 			ObservedGeneration: e.Generation,
-			LastTransitionTime: metav1.NewTime(t.GetUtcTime()),
+			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
 			Reason:             esv1alpha1.ElastAlertAvailableReason,
 			Message:            "ElastAlert " + e.Name + " has successfully progressed.",
 		}
@@ -265,7 +264,7 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string, t podspec.Util) *metav1
 			Type:               esv1alpha1.ElastAlertUnAvailableType,
 			Status:             esv1alpha1.ElastAlertUnAvailableStatus,
 			ObservedGeneration: e.Generation,
-			LastTransitionTime: metav1.NewTime(t.GetUtcTime()),
+			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
 			Reason:             esv1alpha1.ElastAlertUnAvailableReason,
 			Message:            "Failed to apply ElastAlert " + e.Name + " resources.",
 		}

@@ -3,14 +3,16 @@ package controllers
 import (
 	"context"
 	"elastalert/api/v1alpha1"
-	mock_podspec "elastalert/controllers/podspec/mock"
-	"github.com/golang/mock/gomock"
+	"elastalert/controllers/podspec"
+	"errors"
+	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -48,13 +50,13 @@ func TestReCreateDeployment(t *testing.T) {
 				Log:    log,
 				Scheme: s,
 			}
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
+			monkey.Patch(podspec.GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
 			dep := appsv1.Deployment{}
 			r.Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
 			r.Scheme.AddKnownTypes(appsv1.SchemeGroupVersion, &dep)
-			_, err := recreateDeployment(cl, r.Scheme, context.Background(), &tc.elastalert, mock_t)
+			_, err := recreateDeployment(cl, r.Scheme, context.Background(), &tc.elastalert)
 			assert.NoError(t, err)
 			err = cl.Get(context.Background(), types.NamespacedName{
 				Namespace: tc.elastalert.Namespace,
@@ -232,6 +234,97 @@ func TestDeploymentReconcile(t *testing.T) {
 				dep.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = "2021-05-17T01:38:44+08:00"
 				assert.Equal(t, tc.want, dep)
 			}
+		})
+	}
+}
+
+func TestDeploymentReconcileFailed(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	testCases := []struct {
+		desc     string
+		c        client.Client
+		isToWait bool
+	}{
+		{
+			desc: "test deployment reconcile failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "test",
+						Name:      "test-elastalert",
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						PodTemplateSpec: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "elastalert",
+									},
+								},
+							},
+						},
+					},
+				}).Build(),
+			isToWait: false,
+		},
+		{
+			desc: "test deployment reconcile failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "test",
+						Name:      "test-elastalert",
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						PodTemplateSpec: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "elastalert",
+									},
+								},
+							},
+						},
+					},
+				}).Build(),
+			isToWait: true,
+		},
+	}
+	for _, tc := range testCases {
+		defer monkey.Unpatch(recreateDeployment)
+		defer monkey.Unpatch(UpdateElastalertStatus)
+		defer monkey.Unpatch(podspec.WaitForStability)
+		t.Run(tc.desc, func(t *testing.T) {
+			log := ctrl.Log.WithName("test").WithName("Elastalert")
+			r := &DeploymentReconciler{
+				Client: tc.c,
+				Log:    log,
+				Scheme: s,
+			}
+			if !tc.isToWait {
+				monkey.Patch(recreateDeployment, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
+					return nil, errors.New("test")
+				})
+				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+					return errors.New("test update failed")
+				})
+			} else {
+				monkey.Patch(recreateDeployment, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
+					return nil, errors.New("test")
+				})
+				monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
+					return errors.New("test")
+				})
+				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+					return errors.New("test update failed")
+				})
+			}
+			ctx := context.Background()
+			nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
+			req := reconcile.Request{NamespacedName: nsn}
+			_, err := r.Reconcile(ctx, req)
+			assert.Error(t, err)
 		})
 	}
 }

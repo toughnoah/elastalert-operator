@@ -3,8 +3,7 @@ package podspec
 import (
 	"context"
 	"elastalert/api/v1alpha1"
-	mock_podspec "elastalert/controllers/podspec/mock"
-	"github.com/golang/mock/gomock"
+	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -610,10 +609,10 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
-			have, err := BuildPodTemplateSpec(tc.elastalert, mock_t)
+			monkey.Patch(GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
+			have, err := BuildPodTemplateSpec(tc.elastalert)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, have)
 		})
@@ -745,10 +744,10 @@ func TestBuildDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
-			have, err := BuildDeployment(tc.elastalert, mock_t)
+			monkey.Patch(GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
+			have, err := BuildDeployment(tc.elastalert)
 			require.NoError(t, err)
 
 			have.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = "2021-05-17T01:38:44+08:00"
@@ -890,12 +889,12 @@ func TestGenerateNewDeployment(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctl := gomock.NewController(t)
-			mock_t := mock_podspec.NewMockUtil(ctl)
-			mock_t.EXPECT().GetUtcTimeString().Return("2021-05-17T01:38:44+08:00")
 			s := scheme.Scheme
 			s.AddKnownTypes(v1.SchemeGroupVersion, &v1alpha1.Elastalert{})
-			have, err := GenerateNewDeployment(s, &tc.elastalert, mock_t)
+			monkey.Patch(GetUtcTimeString, func() string {
+				return "2021-05-17T01:38:44+08:00"
+			})
+			have, err := GenerateNewDeployment(s, &tc.elastalert)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, *have)
 		})
