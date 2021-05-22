@@ -21,8 +21,8 @@ type PodTemplateBuilder struct {
 	containerDefaulter Defaulter
 }
 
-func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert, t Util) (*appsv1.Deployment, error) {
-	deploy, err := BuildDeployment(*e, t)
+func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
+	deploy, err := BuildDeployment(*e)
 	if err != nil {
 		return nil, err
 	}
@@ -32,10 +32,10 @@ func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert, t Uti
 	return deploy, nil
 }
 
-func BuildDeployment(elastalert v1alpha1.Elastalert, t Util) (*appsv1.Deployment, error) {
+func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error) {
 	var replicas = new(int32)
 	*replicas = 1
-	podTemplate, err := BuildPodTemplateSpec(elastalert, t)
+	podTemplate, err := BuildPodTemplateSpec(elastalert)
 	if err != nil {
 		return nil, err
 	}

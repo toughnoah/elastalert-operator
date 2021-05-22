@@ -3,6 +3,7 @@ module elastalert
 go 1.15
 
 require (
+	github.com/bouk/monkey v1.0.2
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -12,11 +13,9 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/googleapis/gnostic v0.5.3 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-	github.com/onsi/ginkgo v1.14.1
-	github.com/onsi/gomega v1.10.2
 	github.com/prometheus/client_golang v1.9.0 // indirect
 	github.com/prometheus/procfs v0.3.0 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
@@ -37,3 +36,5 @@ require (
 	k8s.io/kube-openapi v0.0.0-20210113233702-8566a335510f // indirect
 	sigs.k8s.io/controller-runtime v0.8.3
 )
+
+replace github.com/bouk/monkey v1.0.2 => bou.ke/monkey v1.0.0

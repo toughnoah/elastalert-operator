@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert, t Util) (corev1.PodTemplateSpec, error) {
+func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpec, error) {
 	var DefaultAnnotations = map[string]string{
-		"kubectl.kubernetes.io/restartedAt": t.GetUtcTimeString(),
+		"kubectl.kubernetes.io/restartedAt": GetUtcTimeString(),
 	}
 	var DefaultCommand = []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"}
 	volumes, volumeMounts := buildVolumes(elastalert.Name)
@@ -125,17 +125,9 @@ func buildLabels() map[string]string {
 	return map[string]string{"app": "elastalert"}
 }
 
-type Util interface {
-	GetUtcTimeString() string
-	GetUtcTime() time.Time
-}
-
-type TimeUtil struct{}
-
-func (t *TimeUtil) GetUtcTimeString() string {
+func GetUtcTimeString() string {
 	return time.Now().UTC().Format("\"2006-01-02T15:04:05+08:00\"")
 }
-
-func (t *TimeUtil) GetUtcTime() time.Time {
+func GetUtcTime() time.Time {
 	return time.Now().UTC()
 }

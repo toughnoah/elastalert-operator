@@ -7,7 +7,7 @@ The Elastalert Operator is an implementation of a [Kubernetes Operator](https://
 ## Getting started
 
 Firstly, learn [How to use elastalert](https://elastalert.readthedocs.io/en/latest/), exactly how to setup a `config.yaml` and `rule`.
-The default command to start elastalert container is  `elastalert --config /etc/elastalert/config.yaml --verbose`
+The default command to start elastalert container is  `elastalert --config /etc/elastalert/config.yaml --verbose`.
 
 To install the operator, please refer to those yamls in`deploy` directory.
 
