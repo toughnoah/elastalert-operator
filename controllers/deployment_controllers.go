@@ -34,7 +34,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get deployment from server")
 		return ctrl.Result{}, err
 	}
-	dep, err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert)
+	newDeploy, err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert)
 	if err != nil {
 		log.Error(err, "Failed to recreate Deployment by steps", "Deployment.Namespace", req.Namespace)
 		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
@@ -42,9 +42,9 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			return ctrl.Result{}, err
 		}
 	}
-	if dep != nil {
+	if newDeploy != nil {
 		log.Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
-		if err := podspec.WaitForStability(r.Client, ctx, *dep); err != nil {
+		if err := podspec.WaitForStability(r.Client, ctx, *newDeploy); err != nil {
 			log.Error(err, "Failed to stabilized Deployment.", "Deployment.Namespace", req.Namespace)
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
@@ -81,21 +81,25 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Con
 			Name:      e.Name,
 		},
 		deploy)
-	if err != nil && k8serrors.IsNotFound(err) {
-		deploy, err = podspec.GenerateNewDeployment(Scheme, e)
-		if err != nil {
-			return nil, err
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			newDeploy, err := podspec.GenerateNewDeployment(Scheme, e)
+			if err != nil {
+				return nil, err
+			}
+			if err = applySecret(c, Scheme, ctx, e); err != nil {
+				return nil, err
+			}
+			if err = applyConfigMaps(c, Scheme, ctx, e); err != nil {
+				return nil, err
+			}
+			if err = c.Create(ctx, newDeploy); err != nil {
+				return nil, err
+			}
+			return newDeploy, nil
 		}
-		if err = applySecret(c, Scheme, ctx, e); err != nil {
-			return nil, err
-		}
-		if err = applyConfigMaps(c, Scheme, ctx, e); err != nil {
-
-		}
-		if err = c.Create(ctx, deploy); err != nil {
-			return nil, err
-		}
-		return deploy, nil
+		return nil, err
 	}
+	// if err if nil, means that event is about about other deployment in same namespace. so just return nil
 	return nil, nil
 }
