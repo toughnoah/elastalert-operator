@@ -909,8 +909,6 @@ func TestElastalertReconciler_SetupWithManager(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	ts.URL = "http://localhost:80"
-	ts.Start()
 	s := scheme.Scheme
 	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
 	monkey.Patch(ctrl.GetConfigOrDie, func() *rest.Config {
