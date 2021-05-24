@@ -25,6 +25,16 @@ func TestElastalert_DeepCopy(t *testing.T) {
 	assert.Equal(t, newea, ea)
 }
 
+func TestElastalert_DeepCopyObject(t *testing.T) {
+	ea := &Elastalert{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+	}
+	newea := ea.DeepCopyObject()
+	assert.Equal(t, newea, ea)
+}
+
 func TestElastalertSpec_DeepCopy(t *testing.T) {
 	ea := &ElastalertSpec{
 		PodTemplateSpec: v1.PodTemplateSpec{
