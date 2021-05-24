@@ -93,9 +93,9 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
+			return ctrl.Result{}, err
 		}
 		log.V(1).Info("Deployment has stabilized", "Deployment.Namespace", req.Namespace)
-
 		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
