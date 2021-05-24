@@ -16,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"net/http"
+	"net/http/httptest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -904,6 +906,11 @@ func TestUpdateElastalertStatus(t *testing.T) {
 }
 
 func TestElastalertReconciler_SetupWithManager(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	ts.URL = "http://localhost:80"
+	ts.Start()
 	s := scheme.Scheme
 	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
 	monkey.Patch(ctrl.GetConfigOrDie, func() *rest.Config {
@@ -920,4 +927,5 @@ func TestElastalertReconciler_SetupWithManager(t *testing.T) {
 		Scheme: s,
 	}
 	assert.NoError(t, r.SetupWithManager(mgr))
+	ts.Close()
 }
