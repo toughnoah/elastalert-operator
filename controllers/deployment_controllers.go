@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -25,9 +24,10 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	log := r.Log.WithValues("deployment", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
+	log.V(1).Info("Start Deployment reconciliation.", "Deployment.Namespace", req.Namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			//Elastalert resource not found in this namespace. Ignoring since deployment should not be created.
+			log.V(1).Info("Elastalert resource not found in this namespace. Ignoring since deployment should not be created.", "Deployment.Namespace", req.Namespace)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -43,7 +43,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		}
 	}
 	if newDeploy != nil {
-		log.Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
+		log.V(1).Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
 		if err := podspec.WaitForStability(r.Client, ctx, *newDeploy); err != nil {
 			log.Error(err, "Failed to stabilized Deployment.", "Deployment.Namespace", req.Namespace)
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
@@ -51,7 +51,8 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 				return ctrl.Result{}, err
 			}
 		}
-		log.Info("Deployment, stabilized.", "Deployment.Namespace", req.Namespace)
+
+		log.Info("Deployment reconcile success.", "Deployment.Namespace", req.Namespace)
 	}
 	return ctrl.Result{}, nil
 }
@@ -59,7 +60,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 3}).
+		//WithOptions(controller.Options{MaxConcurrentReconciles: 3}).
 		//Watches(
 		//	&source.Kind{Type: &esv1alpha1.Elastalert{}},
 		//	handler.EnqueueRequestsFromMapFunc(r.syncOnElastAlertChanges)).

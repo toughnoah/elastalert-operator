@@ -11,7 +11,22 @@ The default command to start elastalert container is  `elastalert --config /etc/
 
 To install the operator, please refer to those yamls in`deploy` directory.
 
-Once the `elastalert-operator` deployment in the namespace `alert` is ready, create an Elastalert instance, like:
+Flags for Operator
+```console
+-health-probe-bind-address string
+The address the probe endpoint binds to. (default ":8081")
+
+-leader-elect
+Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.
+
+-metrics-bind-address string
+The address the metric endpoint binds to. (default ":8080")
+```
+
+
+
+
+Once the `elastalert-operator` deployment in the namespace `alert` is ready, create an Elastalert instance in any namespace, like:
 
 ```
 kubectl apply -n alert -f - <<EOF
