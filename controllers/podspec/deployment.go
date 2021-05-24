@@ -82,6 +82,7 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 		}
 		seen = true
 		fmt.Println(d.Status.ReadyReplicas)
+		fmt.Println(d.Name)
 		fmt.Println(*dep.Spec.Replicas)
 		fmt.Println(dep.ObjectMeta.Name)
 		if d.Status.ReadyReplicas != *dep.Spec.Replicas {
