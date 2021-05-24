@@ -1,4 +1,4 @@
-package controllers
+package e2e
 
 import (
 	"context"
@@ -25,8 +25,8 @@ var _ = Describe("Elastalert Controller", func() {
 			}
 			elastalert := &v1alpha1.Elastalert{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: key.Name,
-					Name:      key.Namespace,
+					Namespace: key.Namespace,
+					Name:      key.Name,
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
