@@ -16,14 +16,14 @@ Args for Operator:
 --health-probe-bind-address string
 The address the probe endpoint binds to. (default ":8081")
 
---leader-elect
-Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.
+--leader-elect bool
+Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager. (default false)
 
 --metrics-bind-address string
 The address the metric endpoint binds to. (default ":8080")
 
---zap-log-level: string
-Zap Level to configure the verbosity of logging. Can be one of debug, info, error. Defaults to level info.
+--zap-log-level string
+Zap Level to configure the verbosity of logging. Can be one of debug, info, error. (default info)
 ```
 
 
