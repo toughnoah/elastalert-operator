@@ -104,6 +104,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		return ctrl.Result{}, nil
 
 	}
+	log.V(1).Info("condition.ObservedGeneration and elastalert.Generation matched. Skipping reconciliation", "Elastalert.Namespace", req.Namespace)
 	return ctrl.Result{}, nil
 }
 
