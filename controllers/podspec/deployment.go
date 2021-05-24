@@ -82,7 +82,7 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 		}
 		seen = true
 		fmt.Println(d.Status.ReadyReplicas)
-		if d.Status.ReadyReplicas != *d.Spec.Replicas {
+		if d.Status.AvailableReplicas != *d.Spec.Replicas {
 			//"Deployment has not stabilized yet"
 			return false, nil
 		}
