@@ -2,7 +2,7 @@ name: "CI Workflow"
 
 on:
   push:
-    branches: [ master ]
+    branches: [ qa ]
   pull_request:
     branches: [ master ]
 

@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -901,23 +900,4 @@ func TestUpdateElastalertStatus(t *testing.T) {
 			assert.Equal(t, tc.want.Status, esa.Status)
 		})
 	}
-}
-
-func TestElastalertReconciler_SetupWithManager(t *testing.T) {
-	s := scheme.Scheme
-	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
-	monkey.Patch(ctrl.GetConfigOrDie, func() *rest.Config {
-		return &rest.Config{}
-	})
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: s,
-	})
-	assert.NoError(t, err)
-	var log = ctrl.Log.WithName("test").WithName("Elastalert")
-	r := &ElastalertReconciler{
-		Client: fake.NewClientBuilder().Build(),
-		Log:    log,
-		Scheme: s,
-	}
-	assert.NoError(t, r.SetupWithManager(mgr))
 }

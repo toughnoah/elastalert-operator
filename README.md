@@ -11,7 +11,7 @@ The default command to start elastalert container is  `elastalert --config /etc/
 
 To install the operator, please refer to those yamls in`deploy` directory.
 
-Flags for Operator
+Args for Operator:
 ```console
 -health-probe-bind-address string
 The address the probe endpoint binds to. (default ":8081")
@@ -21,6 +21,9 @@ Enable leader election for controller manager. Enabling this will ensure there i
 
 -metrics-bind-address string
 The address the metric endpoint binds to. (default ":8080")
+
+--zap-log-level: string
+Zap Level to configure the verbosity of logging. Can be one of debug, info, error. Defaults to level info.
 ```
 
 
