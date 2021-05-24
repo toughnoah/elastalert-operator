@@ -3,7 +3,6 @@ package podspec
 import (
 	"context"
 	"elastalert/api/v1alpha1"
-	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -81,9 +80,7 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 			return false, err
 		}
 		seen = true
-		fmt.Println(d.Status.AvailableReplicas)
-		fmt.Println(d.Status)
-		if d.Status.AvailableReplicas != *dep.Spec.Replicas {
+		if d.Status.ReadyReplicas != d.Status.Replicas {
 			//"Deployment has not stabilized yet"
 			return false, nil
 		}
