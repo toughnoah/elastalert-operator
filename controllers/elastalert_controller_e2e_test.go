@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"time"
 )
 
 var _ = Describe("Elastalert Controller", func() {
@@ -42,6 +43,7 @@ var _ = Describe("Elastalert Controller", func() {
 
 			Expect(k8sClient.Create(context.Background(), elastalert)).ShouldNot(Succeed())
 			By("go here, test success ")
+			time.Sleep(time.Second * 30)
 		})
 	})
 })
