@@ -5,6 +5,7 @@ import (
 	"elastalert/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -36,6 +37,11 @@ var _ = Describe("Elastalert Controller", func() {
 						v1alpha1.NewFreeForm(map[string]interface{}{
 							"name": "test-elastalert", "type": "any",
 						}),
+					},
+					PodTemplateSpec: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{},
+						},
 					},
 				},
 			}
