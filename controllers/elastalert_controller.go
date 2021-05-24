@@ -47,9 +47,10 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	log := r.Log.WithValues("elastalert", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
+	log.V(1).Info("Start Elastalert reconciliation.", "Deployment.Namespace", req.Namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			log.Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
+			log.V(1).Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -66,7 +67,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.Info("Apply secret success", "Configmaps.Namespace", req.Namespace)
+		log.V(1).Info("Apply secret success", "Configmaps.Namespace", req.Namespace)
 
 		if err := applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
@@ -76,7 +77,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.Info("Apply configmaps success", "Secret.Namespace", req.Namespace)
+		log.V(1).Info("Apply configmaps success", "Secret.Namespace", req.Namespace)
 		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert)
 		if err != nil {
 			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
@@ -93,15 +94,17 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 				return ctrl.Result{}, err
 			}
 		}
-		log.Info("Deployment has stabilized", "Deployment.Namespace", req.Namespace)
+		log.V(1).Info("Deployment has stabilized", "Deployment.Namespace", req.Namespace)
 
 		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
+		log.V(1).Info("Reconcile Elastalert resource success.", "Elastalert.Namespace", req.Namespace)
 		return ctrl.Result{}, nil
 
 	}
+	log.V(1).Info("condition.ObservedGeneration and elastalert.Generation matched. Skipping reconciliation", "Elastalert.Namespace", req.Namespace)
 	return ctrl.Result{}, nil
 }
 
