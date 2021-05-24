@@ -40,7 +40,7 @@ var _ = Describe("Elastalert Controller", func() {
 				},
 			}
 
-			Expect(k8sClient.Create(context.Background(), elastalert)).ShouldNot(Succeed())
+			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
 		})
 	})
 })
