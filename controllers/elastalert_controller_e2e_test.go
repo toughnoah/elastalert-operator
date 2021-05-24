@@ -17,27 +17,29 @@ var _ = Describe("Elastalert Controller", func() {
 	AfterEach(func() {
 		// Add any teardown steps that needs to be executed after each test
 	})
-	Context("Test create Elastalert", func() {
-		key := types.NamespacedName{
-			Name:      "e2e-elastalert",
-			Namespace: "default",
-		}
-		elastalert := &v1alpha1.Elastalert{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: key.Name,
-				Name:      key.Namespace,
-			},
-			Spec: v1alpha1.ElastalertSpec{
-				ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
-					"config": "test",
-				}),
-				Rule: []v1alpha1.FreeForm{
-					v1alpha1.NewFreeForm(map[string]interface{}{
-						"name": "test-elastalert", "type": "any",
-					}),
+	Context("Deploy Elastalert", func() {
+		It("test creat Elastalert", func() {
+			key := types.NamespacedName{
+				Name:      "e2e-elastalert",
+				Namespace: "default",
+			}
+			elastalert := &v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: key.Name,
+					Name:      key.Namespace,
 				},
-			},
-		}
-		Expect(k8sClient.Create(context.Background(), elastalert)).ShouldNot(Succeed())
+				Spec: v1alpha1.ElastalertSpec{
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
+				},
+			}
+			Expect(k8sClient.Create(context.Background(), elastalert)).ShouldNot(Succeed())
+		})
 	})
 })
