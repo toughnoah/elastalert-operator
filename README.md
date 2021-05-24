@@ -13,13 +13,13 @@ To install the operator, please refer to those yamls in`deploy` directory.
 
 Args for Operator:
 ```console
--health-probe-bind-address string
+--health-probe-bind-address string
 The address the probe endpoint binds to. (default ":8081")
 
--leader-elect
+--leader-elect
 Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.
 
--metrics-bind-address string
+--metrics-bind-address string
 The address the metric endpoint binds to. (default ":8080")
 
 --zap-log-level: string
