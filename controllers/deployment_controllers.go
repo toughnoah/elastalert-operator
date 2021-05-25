@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -25,6 +24,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	log := r.Log.WithValues("deployment", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
+	log.V(1).Info("Start Deployment reconciliation.", "Deployment.Namespace", req.Namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.V(1).Info("Elastalert resource not found in this namespace. Ignoring since deployment should not be created.", "Deployment.Namespace", req.Namespace)

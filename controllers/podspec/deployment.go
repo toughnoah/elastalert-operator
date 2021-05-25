@@ -62,6 +62,7 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error)
 func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
 	// the images, subsequent runs should take only a few seconds
 	seen := false
+
 	return wait.Poll(time.Second, 3*time.Minute,
 		func() (done bool, err error) {
 			d := &appsv1.Deployment{}
@@ -73,7 +74,6 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 						//"Deployment has been removed."
 						return true, err
 					}
-
 					// the object might have not been created yet
 					//"Deployment doesn't exist yet."
 					return false, nil
@@ -85,7 +85,6 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 				//"Deployment has not stabilized yet"
 				return false, nil
 			}
-
 			//"Deployment has stabilized"
 			return true, nil
 		})
