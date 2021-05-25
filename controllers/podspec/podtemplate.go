@@ -29,6 +29,14 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 		WithVolumeMounts(volumeMounts...).
 		WithInitContainerDefaults().
 		WithReadinessProbe(corev1.Probe{
+			Handler: corev1.Handler{
+				Exec: &corev1.ExecAction{
+					Command: []string{
+						"cat",
+						"/etc/elastalert/config.yaml",
+					},
+				},
+			},
 			InitialDelaySeconds: 10,
 			TimeoutSeconds:      3,
 			PeriodSeconds:       2,
