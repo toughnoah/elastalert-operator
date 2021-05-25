@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const timeout = time.Minute * 3
+const timeout = time.Minute * 4
 const interval = time.Second * 1
 
 var _ = Describe("Elastalert Controller", func() {
@@ -34,7 +34,7 @@ var _ = Describe("Elastalert Controller", func() {
 		// Add any teardown steps that needs to be executed after each test
 	})
 	Context("Deploy Elastalert", func() {
-		It("test creat Elastalert with wrong config", func() {
+		It("Test creat Elastalert with wrong config", func() {
 			key := types.NamespacedName{
 				Name:      "e2e-elastalert",
 				Namespace: "default",
@@ -61,7 +61,7 @@ var _ = Describe("Elastalert Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
-			By("start waiting")
+			By("Start waiting for failed status")
 			Eventually(func() string {
 				ea := &v1alpha1.Elastalert{}
 				_ = k8sClient.Get(context.Background(), key, ea)
