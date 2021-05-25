@@ -27,7 +27,14 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 		WithInitContainers().
 		WithVolumes(volumes...).
 		WithVolumeMounts(volumeMounts...).
-		WithInitContainerDefaults()
+		WithInitContainerDefaults().
+		WithReadinessProbe(corev1.Probe{
+			InitialDelaySeconds: 10,
+			TimeoutSeconds:      3,
+			PeriodSeconds:       2,
+			SuccessThreshold:    5,
+			FailureThreshold:    3,
+		})
 	return builder.PodTemplate, nil
 }
 
