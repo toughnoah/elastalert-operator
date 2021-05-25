@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -59,7 +60,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		//WithOptions(controller.Options{MaxConcurrentReconciles: 3}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 5}).
 		//Watches(
 		//	&source.Kind{Type: &esv1alpha1.Elastalert{}},
 		//	handler.EnqueueRequestsFromMapFunc(r.syncOnElastAlertChanges)).

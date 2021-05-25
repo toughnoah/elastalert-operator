@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -112,6 +113,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 func (r *ElastalertReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&esv1alpha1.Elastalert{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 5}).
 		Complete(r)
 }
 func UpdateElastalertStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, flag string) error {
