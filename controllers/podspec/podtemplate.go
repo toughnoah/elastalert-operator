@@ -56,7 +56,7 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 			InitialDelaySeconds: 50,
 			TimeoutSeconds:      3,
 			PeriodSeconds:       2,
-			SuccessThreshold:    5,
+			SuccessThreshold:    1,
 			FailureThreshold:    3,
 		})
 	return builder.PodTemplate, nil
