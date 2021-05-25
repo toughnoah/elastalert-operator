@@ -479,6 +479,7 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			defer monkey.Unpatch(tc.testFunc)
 			defer monkey.Unpatch(UpdateElastalertStatus)
+			defer monkey.Unpatch(podspec.WaitForStability)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
 				Client: tc.c,

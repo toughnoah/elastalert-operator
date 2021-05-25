@@ -245,7 +245,7 @@ func TestDeploymentReconcile(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-
+		defer monkey.Unpatch(podspec.WaitForStability)
 		t.Run(tc.desc, func(t *testing.T) {
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &DeploymentReconciler{
@@ -256,6 +256,9 @@ func TestDeploymentReconcile(t *testing.T) {
 			ctx := context.Background()
 			nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
 			req := reconcile.Request{NamespacedName: nsn}
+			monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
+				return nil
+			})
 			_, err := r.Reconcile(ctx, req)
 			assert.NoError(t, err)
 			if !tc.testNotfound {
