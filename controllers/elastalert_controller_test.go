@@ -488,6 +488,9 @@ func TestReconcile(t *testing.T) {
 			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
 			req := reconcile.Request{NamespacedName: nsn}
 			if tc.result {
+				monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
+					return nil
+				})
 				_, err := r.Reconcile(context.Background(), req)
 				assert.NoError(t, err)
 			} else {
