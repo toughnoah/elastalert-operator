@@ -8,7 +8,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"time"
 )
+
+const timeout = time.Minute * 3
+const interval = time.Second * 1
 
 var _ = Describe("Elastalert Controller", func() {
 	BeforeEach(func() {
@@ -16,10 +20,21 @@ var _ = Describe("Elastalert Controller", func() {
 	})
 
 	AfterEach(func() {
+		key := types.NamespacedName{
+			Name:      "e2e-elastalert",
+			Namespace: "default",
+		}
+		ea := &v1alpha1.Elastalert{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: key.Namespace,
+				Name:      key.Name,
+			},
+		}
+		_ = k8sClient.Delete(context.Background(), ea)
 		// Add any teardown steps that needs to be executed after each test
 	})
 	Context("Deploy Elastalert", func() {
-		It("test creat Elastalert", func() {
+		It("test creat Elastalert with wrong config", func() {
 			key := types.NamespacedName{
 				Name:      "e2e-elastalert",
 				Namespace: "default",
@@ -45,8 +60,13 @@ var _ = Describe("Elastalert Controller", func() {
 					},
 				},
 			}
-
 			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
+			By("start waiting")
+			Eventually(func() string {
+				ea := &v1alpha1.Elastalert{}
+				_ = k8sClient.Get(context.Background(), key, ea)
+				return ea.Status.Phase
+			}, timeout, interval).Should(Equal("FAILED"))
 		})
 	})
 })
