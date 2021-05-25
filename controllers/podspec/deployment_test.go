@@ -92,6 +92,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
 							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
+							},
 						},
 					},
 					Volumes: []v1.Volume{
@@ -205,6 +236,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -325,6 +387,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -460,6 +553,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
 							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
+							},
 						},
 					},
 					Volumes: []v1.Volume{
@@ -563,6 +687,37 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							},
 							Ports: []v1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"cat",
+											"/etc/elastalert/config.yaml",
+										},
+									},
+								},
+								InitialDelaySeconds: 20,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    5,
+								FailureThreshold:    3,
+							},
+							LivenessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									Exec: &v1.ExecAction{
+										Command: []string{
+											"sh",
+											"-c",
+											"ps -ef|grep -v grep|grep elastalert",
+										},
+									},
+								},
+								InitialDelaySeconds: 50,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       2,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -696,6 +851,37 @@ func TestBuildDeployment(t *testing.T) {
 									},
 									Ports: []v1.ContainerPort{
 										{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
+									},
+									ReadinessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"cat",
+													"/etc/elastalert/config.yaml",
+												},
+											},
+										},
+										InitialDelaySeconds: 20,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    5,
+										FailureThreshold:    3,
+									},
+									LivenessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"sh",
+													"-c",
+													"ps -ef|grep -v grep|grep elastalert",
+												},
+											},
+										},
+										InitialDelaySeconds: 50,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
 									},
 								},
 							},
@@ -843,6 +1029,37 @@ func TestGenerateNewDeployment(t *testing.T) {
 									Ports: []v1.ContainerPort{
 										{Name: "http", ContainerPort: 8080, Protocol: v1.ProtocolTCP},
 									},
+									ReadinessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"cat",
+													"/etc/elastalert/config.yaml",
+												},
+											},
+										},
+										InitialDelaySeconds: 20,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    5,
+										FailureThreshold:    3,
+									},
+									LivenessProbe: &v1.Probe{
+										Handler: v1.Handler{
+											Exec: &v1.ExecAction{
+												Command: []string{
+													"sh",
+													"-c",
+													"ps -ef|grep -v grep|grep elastalert",
+												},
+											},
+										},
+										InitialDelaySeconds: 50,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
+									},
 								},
 							},
 							Volumes: []v1.Volume{
@@ -921,7 +1138,7 @@ func TestWaitForStability(t *testing.T) {
 						Replicas: &replicas,
 					},
 					Status: appsv1.DeploymentStatus{
-						ReadyReplicas: replicas,
+						AvailableReplicas: replicas,
 					},
 				}).Build(),
 			dep: appsv1.Deployment{
@@ -944,7 +1161,7 @@ func TestWaitForStability(t *testing.T) {
 						Replicas: &replicas,
 					},
 					Status: appsv1.DeploymentStatus{
-						ReadyReplicas: 0,
+						AvailableReplicas: 0,
 					},
 				}).Build(),
 			dep: appsv1.Deployment{

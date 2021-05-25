@@ -96,6 +96,13 @@ func (d Defaulter) WithReadinessProbe(readinessProbe *corev1.Probe) Defaulter {
 	return d
 }
 
+func (d Defaulter) WithLivenessProbe(LivenessProbe *corev1.Probe) Defaulter {
+	if d.base.LivenessProbe == nil {
+		d.base.LivenessProbe = LivenessProbe
+	}
+	return d
+}
+
 // envExists checks if an env var with the given name already exists in the provided slice.
 func (d Defaulter) envExists(name string) bool {
 	for _, v := range d.base.Env {
@@ -185,6 +192,12 @@ func (b *PodTemplateBuilder) WithDockerImage(customImage string, defaultImage st
 // WithReadinessProbe sets up the given readiness probe, unless already provided in the template.
 func (b *PodTemplateBuilder) WithReadinessProbe(readinessProbe corev1.Probe) *PodTemplateBuilder {
 	b.containerDefaulter.WithReadinessProbe(&readinessProbe)
+	return b
+}
+
+// WithLivenessProbe sets up the given readiness probe, unless already provided in the template.
+func (b *PodTemplateBuilder) WithLivenessProbe(LivenessProbe corev1.Probe) *PodTemplateBuilder {
+	b.containerDefaulter.WithLivenessProbe(&LivenessProbe)
 	return b
 }
 
