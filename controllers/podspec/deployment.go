@@ -81,16 +81,12 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 				return false, err
 			}
 			seen = true
-			var res bool
-			for i := 0; i < 3; i++ {
-				time.Sleep(time.Second * 2)
-				res = true
-				if d.Status.AvailableReplicas != *d.Spec.Replicas {
-					//"Deployment has not stabilized yet"
-					res = false
-				}
+			if d.Status.AvailableReplicas != *d.Spec.Replicas {
+				//"Deployment has not stabilized yet"
+				return false, nil
 			}
+
 			//"Deployment has stabilized"
-			return res, nil
+			return true, nil
 		})
 }
