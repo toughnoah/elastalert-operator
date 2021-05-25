@@ -166,6 +166,37 @@ func TestDeploymentReconcile(t *testing.T) {
 									Ports: []corev1.ContainerPort{
 										{Name: "http", ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
 									},
+									ReadinessProbe: &corev1.Probe{
+										Handler: corev1.Handler{
+											Exec: &corev1.ExecAction{
+												Command: []string{
+													"cat",
+													"/etc/elastalert/config.yaml",
+												},
+											},
+										},
+										InitialDelaySeconds: 20,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    5,
+										FailureThreshold:    3,
+									},
+									LivenessProbe: &corev1.Probe{
+										Handler: corev1.Handler{
+											Exec: &corev1.ExecAction{
+												Command: []string{
+													"sh",
+													"-c",
+													"ps -ef|grep -v grep|grep elastalert",
+												},
+											},
+										},
+										InitialDelaySeconds: 50,
+										TimeoutSeconds:      3,
+										PeriodSeconds:       2,
+										SuccessThreshold:    1,
+										FailureThreshold:    3,
+									},
 								},
 							},
 							Volumes: []corev1.Volume{
