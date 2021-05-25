@@ -37,7 +37,23 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 					},
 				},
 			},
-			InitialDelaySeconds: 10,
+			InitialDelaySeconds: 20,
+			TimeoutSeconds:      3,
+			PeriodSeconds:       2,
+			SuccessThreshold:    5,
+			FailureThreshold:    3,
+		}).WithLivenessProbe(
+		corev1.Probe{
+			Handler: corev1.Handler{
+				Exec: &corev1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						"ps -ef|grep -v grep|grep elastalert",
+					},
+				},
+			},
+			InitialDelaySeconds: 50,
 			TimeoutSeconds:      3,
 			PeriodSeconds:       2,
 			SuccessThreshold:    5,
