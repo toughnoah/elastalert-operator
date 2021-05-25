@@ -3,6 +3,7 @@ package podspec
 import (
 	"context"
 	"elastalert/api/v1alpha1"
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,7 +63,7 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error)
 func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
 	// the images, subsequent runs should take only a few seconds
 	seen := false
-
+	log := ctrl.Log.WithName("Deployment").WithValues("deployment", dep.Name)
 	return wait.Poll(time.Second, 3*time.Minute,
 		func() (done bool, err error) {
 			d := &appsv1.Deployment{}
@@ -72,10 +73,12 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 						// we have seen this object before, but it doesn't exist anymore!
 						// we don't have anything else to do here, break the poll
 						//"Deployment has been removed."
+						log.V(1).Info("Have seen this deployment before, but it doesn't exist anymore!", "deployment", dep.Name)
 						return true, err
 					}
 					// the object might have not been created yet
 					//"Deployment doesn't exist yet."
+					log.V(1).Info("Deployment doesn't exist yet.", "deployment", dep.Name)
 					return false, nil
 				}
 				return false, err
@@ -83,6 +86,7 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 			seen = true
 			if d.Status.AvailableReplicas != *d.Spec.Replicas {
 				//"Deployment has not stabilized yet"
+				log.V(1).Info(fmt.Sprintf("Deployment has not stabilized yet, expected %d, got %d.", *d.Spec.Replicas, d.Status.AvailableReplicas), "deployment", dep.Name)
 				return false, nil
 			}
 			//"Deployment has stabilized"

@@ -42,6 +42,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
+		return ctrl.Result{}, err
 	}
 	if newDeploy != nil {
 		log.V(1).Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
@@ -51,9 +52,9 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}
+			return ctrl.Result{}, err
 		}
 
-		log.V(1).Info("Deployment reconcile success.", "Deployment.Namespace", req.Namespace)
 	}
 	return ctrl.Result{}, nil
 }
@@ -77,6 +78,7 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
+	log := ctrl.Log.WithName("Deployment").WithValues("deployment", e.Name)
 	err := c.Get(ctx,
 		types.NamespacedName{
 			Namespace: e.Namespace,
@@ -92,12 +94,15 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Con
 			if err = applySecret(c, Scheme, ctx, e); err != nil {
 				return nil, err
 			}
+			log.V(1).Info("Apply secret success", "Secret.Namespace", e.Namespace)
 			if err = applyConfigMaps(c, Scheme, ctx, e); err != nil {
 				return nil, err
 			}
+			log.V(1).Info("Apply configmaps success", "Configmap.Namespace", e.Namespace)
 			if err = c.Create(ctx, newDeploy); err != nil {
 				return nil, err
 			}
+			log.V(1).Info("Deployment reconcile success.", "Deployment.Namespace", e.Namespace)
 			return newDeploy, nil
 		}
 		return nil, err
