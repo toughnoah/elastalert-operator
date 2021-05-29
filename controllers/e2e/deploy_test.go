@@ -83,7 +83,7 @@ var _ = Describe("Elastalert Controller", func() {
 						"alert": []string{
 							"post",
 						},
-						"http_post_url":     "https://api-b2b-prd.cn-pgcloud.com/nymeria/alerts",
+						"http_post_url":     "https://test.com/alerts",
 						"http_post_timeout": 60,
 					}),
 					PodTemplateSpec: v1.PodTemplateSpec{
@@ -99,11 +99,11 @@ var _ = Describe("Elastalert Controller", func() {
 				},
 			}
 			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
-			Eventually(func() error {
+			Eventually(func() int32 {
 				dep := &appsv1.Deployment{}
-				err := k8sClient.Get(context.Background(), key, dep)
-				return err
-			}, timeout, interval).Should(Succeed())
+				_ = k8sClient.Get(context.Background(), key, dep)
+				return dep.Status.AvailableReplicas
+			}, timeout, interval).Should(Equal(1))
 		})
 		It("Test create Elastalert with wrong config", func() {
 			key := types.NamespacedName{
