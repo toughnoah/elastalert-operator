@@ -102,29 +102,38 @@ var _ = Describe("Elastalert Controller", func() {
 			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
 
 			By("Check config.yaml configmap.")
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      "e2e-elastalert-config",
-				Namespace: "default",
-			}, &v1.ConfigMap{})).Should(Succeed())
+			Eventually(func() error {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      "e2e-elastalert-config",
+					Namespace: "default",
+				}, &v1.ConfigMap{})
+				return err
+			}, timeout, interval).Should(Succeed())
 
 			By("Check rules configmap.")
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      "e2e-elastalert-rule",
-				Namespace: "default",
-			}, &v1.ConfigMap{})).Should(Succeed())
+			Eventually(func() error {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      "e2e-elastalert-rule",
+					Namespace: "default",
+				}, &v1.ConfigMap{})
+				return err
+			}, timeout, interval).Should(Succeed())
 
 			By("Check cert secret.")
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      "e2e-elastalert-es-cert",
-				Namespace: "default",
-			}, &v1.Secret{})).Should(Succeed())
+			Eventually(func() error {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      "e2e-elastalert-es-cert",
+					Namespace: "default",
+				}, &v1.Secret{})
+				return err
+			}, timeout, interval).Should(Succeed())
 
 			By("Start waiting deployment to be stable.")
 			Eventually(func() int32 {
 				dep := &appsv1.Deployment{}
 				_ = k8sClient.Get(context.Background(), key, dep)
 				return dep.Status.AvailableReplicas
-			}, timeout, interval).Should(Equal(1))
+			}, timeout*2, interval).Should(Equal(1))
 		})
 		It("Test create Elastalert with wrong config", func() {
 			key := types.NamespacedName{
