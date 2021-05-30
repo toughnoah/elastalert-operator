@@ -18,18 +18,21 @@ func TestGenerateCertSecret(t *testing.T) {
 		{
 			name: "test generate default secret",
 			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
 				Spec: v1alpha1.ElastalertSpec{
 					Cert: "abc",
 				},
 			},
 			want: v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: DefaultCertName,
+					Name: "test" + DefaultCertSuffix,
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         "v1",
 							Kind:               "Elastalert",
-							Name:               "",
+							Name:               "test",
 							UID:                "",
 							Controller:         &varTrue,
 							BlockOwnerDeletion: &varTrue,

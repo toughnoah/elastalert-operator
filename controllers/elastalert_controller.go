@@ -203,7 +203,7 @@ func applySecret(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e
 	}
 	if err := c.Get(ctx, types.NamespacedName{
 		Namespace: e.Namespace,
-		Name:      podspec.DefaultCertName,
+		Name:      e.Name + podspec.DefaultCertSuffix,
 	},
 		secret); err != nil {
 		if k8serrors.IsNotFound(err) {

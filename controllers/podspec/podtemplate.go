@@ -7,9 +7,10 @@ import (
 )
 
 func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpec, error) {
-	var DefaultAnnotations = map[string]string{
+	DefaultAnnotations := map[string]string{
 		"kubectl.kubernetes.io/restartedAt": GetUtcTimeString(),
 	}
+	DefaultAnnotations = Merge(DefaultAnnotations, elastalert.Annotations)
 	var DefaultCommand = []string{"elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"}
 	volumes, volumeMounts := buildVolumes(elastalert.Name)
 	labelselector := buildLabels()
@@ -22,7 +23,6 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 		WithTerminationGracePeriod(DefaultTerminationGracePeriodSeconds).
 		WithPorts(GetDefaultContainerPorts()).
 		WithAffinity(DefaultAffinity(elastalert.Name)).
-		WithEnv().
 		WithCommand(DefaultCommand).
 		WithInitContainers().
 		WithVolumes(volumes...).
@@ -62,7 +62,7 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 	return builder.PodTemplate, nil
 }
 
-func buildVolumes(cmName string) ([]corev1.Volume, []corev1.VolumeMount) {
+func buildVolumes(eaName string) ([]corev1.Volume, []corev1.VolumeMount) {
 	var elastAlertVolumes []corev1.Volume
 	var elastAlertVolumesMounts []corev1.VolumeMount
 
@@ -72,17 +72,17 @@ func buildVolumes(cmName string) ([]corev1.Volume, []corev1.VolumeMount) {
 	}
 	for typeSuffix, Path := range volumesTypeMap {
 		elastalertVolume := corev1.Volume{
-			Name: cmName + typeSuffix,
+			Name: eaName + typeSuffix,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cmName + typeSuffix,
+						Name: eaName + typeSuffix,
 					},
 				},
 			},
 		}
 		elastalertVolumeMount := corev1.VolumeMount{
-			Name:      cmName + typeSuffix,
+			Name:      eaName + typeSuffix,
 			MountPath: Path,
 		}
 		elastAlertVolumes = append(elastAlertVolumes, elastalertVolume)
@@ -90,15 +90,15 @@ func buildVolumes(cmName string) ([]corev1.Volume, []corev1.VolumeMount) {
 	}
 
 	certVolume := &corev1.Volume{
-		Name: DefaultCertName,
+		Name: DefaultCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: DefaultCertName,
+				SecretName: eaName + DefaultCertSuffix,
 			},
 		},
 	}
 	certVolumeMount := &corev1.VolumeMount{
-		Name:      DefaultCertName,
+		Name:      DefaultCertVolumeName,
 		MountPath: DefaultCertMountPath,
 	}
 
@@ -157,7 +157,7 @@ func buildLabels() map[string]string {
 }
 
 func GetUtcTimeString() string {
-	return time.Now().UTC().Format("\"2006-01-02T15:04:05+08:00\"")
+	return time.Now().UTC().Format("2006-01-02T15:04:05+08:00")
 }
 func GetUtcTime() time.Time {
 	return time.Now().UTC()
