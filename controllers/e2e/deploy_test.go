@@ -98,7 +98,28 @@ var _ = Describe("Elastalert Controller", func() {
 					},
 				},
 			}
+			By("Start to deploy elastalert.")
 			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
+
+			By("Check config.yaml configmap.")
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      "e2e-elastalert-config",
+				Namespace: "default",
+			}, &v1.ConfigMap{})).Should(Succeed())
+
+			By("Check rules configmap.")
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      "e2e-elastalert-rule",
+				Namespace: "default",
+			}, &v1.ConfigMap{})).Should(Succeed())
+
+			By("Check cert secret.")
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      "e2e-elastalert-es-cert",
+				Namespace: "default",
+			}, &v1.Secret{})).Should(Succeed())
+
+			By("Start waiting deployment to be stable.")
 			Eventually(func() int32 {
 				dep := &appsv1.Deployment{}
 				_ = k8sClient.Get(context.Background(), key, dep)
