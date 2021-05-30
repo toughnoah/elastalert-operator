@@ -22,7 +22,7 @@ func BuildCertSecret(e *esv1alpha1.Elastalert) *corev1.Secret {
 	data[DefaultElasticCertName] = []byte(stringCert)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      DefaultCertName,
+			Name:      e.Name + DefaultCertSuffix,
 			Namespace: e.Namespace,
 		},
 		Data: data,

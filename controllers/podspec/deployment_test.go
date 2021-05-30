@@ -25,18 +25,16 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 		want       v1.PodTemplateSpec
 	}{
 		{
-			name: "test default elastalert resources",
+			name: "test default elastalert resources and merge annotations",
 			elastalert: v1alpha1.Elastalert{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-elastalert",
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					PodTemplateSpec: v1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Annotations: map[string]string{
-								"sidecar.istio.io/inject": "false",
-							},
-						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
@@ -131,7 +129,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Name: "elasticsearch-cert",
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
-									SecretName: "elasticsearch-cert",
+									SecretName: "test-elastalert-es-cert",
 								},
 							},
 						},
@@ -276,7 +274,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Name: "elasticsearch-cert",
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
-									SecretName: "elasticsearch-cert",
+									SecretName: "test-elastalert-es-cert",
 								},
 							},
 						},
@@ -308,19 +306,18 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 					},
 				},
 			},
-		}, {
+		},
+		{
 			name: "test change resources",
 			elastalert: v1alpha1.Elastalert{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-elastalert",
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
 				},
 				Spec: v1alpha1.ElastalertSpec{
 					PodTemplateSpec: v1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Annotations: map[string]string{
-								"sidecar.istio.io/inject": "false",
-							},
-						},
 						Spec: v1.PodSpec{
 							Containers: []v1.Container{
 								{
@@ -427,7 +424,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Name: "elasticsearch-cert",
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
-									SecretName: "elasticsearch-cert",
+									SecretName: "test-elastalert-es-cert",
 								},
 							},
 						},
@@ -592,7 +589,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Name: "elasticsearch-cert",
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
-									SecretName: "elasticsearch-cert",
+									SecretName: "test-elastalert-es-cert",
 								},
 							},
 						},
@@ -727,7 +724,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 							Name: "elasticsearch-cert",
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
-									SecretName: "elasticsearch-cert",
+									SecretName: "test-elastalert-es-cert",
 								},
 							},
 						},
@@ -891,7 +888,7 @@ func TestBuildDeployment(t *testing.T) {
 									Name: "elasticsearch-cert",
 									VolumeSource: v1.VolumeSource{
 										Secret: &v1.SecretVolumeSource{
-											SecretName: "elasticsearch-cert",
+											SecretName: "test-elastalert-es-cert",
 										},
 									},
 								},
@@ -1068,7 +1065,7 @@ func TestGenerateNewDeployment(t *testing.T) {
 									Name: "elasticsearch-cert",
 									VolumeSource: v1.VolumeSource{
 										Secret: &v1.SecretVolumeSource{
-											SecretName: "elasticsearch-cert",
+											SecretName: "test-elastalert-es-cert",
 										},
 									},
 								},

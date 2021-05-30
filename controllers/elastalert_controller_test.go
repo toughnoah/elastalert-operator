@@ -131,7 +131,7 @@ func TestApplySecret(t *testing.T) {
 			c: fake.NewClientBuilder().WithRuntimeObjects(&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "esa1",
-					Name:      podspec.DefaultCertName,
+					Name:      "my-esa" + podspec.DefaultCertSuffix,
 				},
 				Data: map[string][]byte{
 					"elasticCA.crt": []byte("1"),
@@ -156,7 +156,7 @@ func TestApplySecret(t *testing.T) {
 			assert.NoError(t, err)
 			err = r.Client.Get(context.Background(), types.NamespacedName{
 				Namespace: tc.elastalert.Namespace,
-				Name:      podspec.DefaultCertName,
+				Name:      "my-esa" + podspec.DefaultCertSuffix,
 			}, &se)
 			require.NoError(t, err)
 			assert.Equal(t, se.Data, map[string][]byte{

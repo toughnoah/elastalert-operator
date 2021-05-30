@@ -14,7 +14,8 @@ const (
 	DefaultTerminationGracePeriodSeconds int64 = 30
 	DefaultElastAlertName                      = "elastalert"
 	DefautlImage                               = "toughnoah/elastalert:v1.0"
-	DefaultCertName                            = "elasticsearch-cert"
+	DefaultCertVolumeName                      = "elasticsearch-cert"
+	DefaultCertSuffix                          = "-es-cert"
 	DefaultCertMountPath                       = "/ssl"
 	DefaultElasticCertName                     = "elasticCA.crt"
 	DefaultRulesFolder                         = "/etc/elastalert/rules/..data/"
