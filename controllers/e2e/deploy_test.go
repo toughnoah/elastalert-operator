@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-const WaitForStabilityTimeout = time.Minute * 4
 const interval = time.Second * 1
 const timeout = time.Second * 30
 
@@ -168,7 +167,7 @@ var _ = Describe("Elastalert Controller", func() {
 				ea := &v1alpha1.Elastalert{}
 				_ = k8sClient.Get(context.Background(), key, ea)
 				return ea.Status.Phase
-			}, WaitForStabilityTimeout, interval).Should(Equal("FAILED"))
+			}, timeout*6, interval).Should(Equal("FAILED"))
 		})
 	})
 })
