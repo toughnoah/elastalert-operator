@@ -28,10 +28,10 @@ var (
 		"verify_certs":    false,
 		"writeback_index": "elastalert",
 		"rules_folder":    "/etc/elastalert/rules/..data/",
-		"run_every": map[interface{}]interface{}{
+		"run_every": map[string]interface{}{
 			"minutes": 1,
 		},
-		"buffer_time": map[interface{}]interface{}{
+		"buffer_time": map[string]interface{}{
 			"minutes": 15,
 		},
 	}
