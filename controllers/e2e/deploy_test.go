@@ -28,10 +28,10 @@ var (
 		"verify_certs":    false,
 		"writeback_index": "elastalert",
 		"rules_folder":    "/etc/elastalert/rules/..data/",
-		"run_every": map[string]interface{}{
+		"run_every": map[interface{}]interface{}{
 			"minutes": 1,
 		},
-		"buffer_time": map[string]interface{}{
+		"buffer_time": map[interface{}]interface{}{
 			"minutes": 15,
 		},
 	}
@@ -200,8 +200,6 @@ var _ = Describe("Elastalert Controller", func() {
 func compare(source string, dest map[string]interface{}) bool {
 	var data = make(map[string]interface{})
 	_ = yaml.Unmarshal([]byte(source), &data)
-	fmt.Println(data)
-	fmt.Println(dest)
 	fmt.Println(reflect.DeepEqual(data, dest))
 	return reflect.DeepEqual(data, dest)
 }
