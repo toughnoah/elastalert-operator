@@ -200,7 +200,6 @@ var _ = Describe("Elastalert Controller", func() {
 func compare(source string, dest map[string]interface{}) bool {
 	var data = make(map[string]interface{})
 	_ = yaml.Unmarshal([]byte(source), &data)
-	fmt.Println(data)
-	fmt.Println(dest)
+	fmt.Println(reflect.DeepEqual(data, dest))
 	return reflect.DeepEqual(data, dest)
 }
