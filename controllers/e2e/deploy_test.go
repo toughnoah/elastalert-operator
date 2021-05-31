@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"elastalert/api/v1alpha1"
-	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
@@ -27,6 +26,7 @@ var (
 		"es_password":     "changeme",
 		"verify_certs":    false,
 		"writeback_index": "elastalert",
+		"rules_folder":    "/etc/elastalert/rules/..data/",
 		"run_every": map[string]interface{}{
 			"minutes": 1,
 		},
@@ -199,6 +199,5 @@ var _ = Describe("Elastalert Controller", func() {
 func compare(source string, dest map[string]interface{}) bool {
 	var data = make(map[string]interface{})
 	_ = yaml.Unmarshal([]byte(source), &data)
-	fmt.Println(data)
 	return reflect.DeepEqual(data, dest)
 }
