@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"elastalert/api/v1alpha1"
-	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
@@ -48,6 +47,11 @@ var (
 				},
 			},
 		},
+		"alert": []string{
+			"post",
+		},
+		"http_post_url":     "https://test.com/alerts",
+		"http_post_timeout": 60,
 	}
 	RuleSample2 = map[string]interface{}{
 		"name":  "check-elastalert",
@@ -62,6 +66,11 @@ var (
 				},
 			},
 		},
+		"alert": []string{
+			"post",
+		},
+		"http_post_url":     "https://test.com/alerts",
+		"http_post_timeout": 60,
 	}
 )
 
@@ -101,13 +110,6 @@ var _ = Describe("Elastalert Controller", func() {
 						v1alpha1.NewFreeForm(RuleSample1),
 						v1alpha1.NewFreeForm(RuleSample2),
 					},
-					Alert: v1alpha1.NewFreeForm(map[string]interface{}{
-						"alert": []string{
-							"post",
-						},
-						"http_post_url":     "https://test.com/alerts",
-						"http_post_timeout": 60,
-					}),
 					PodTemplateSpec: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Annotations: map[string]string{
@@ -199,6 +201,5 @@ var _ = Describe("Elastalert Controller", func() {
 
 func compare(source string, dest map[string]interface{}) bool {
 	out, _ := yaml.Marshal(dest)
-	fmt.Println(string(out))
 	return reflect.DeepEqual([]byte(source), out)
 }
