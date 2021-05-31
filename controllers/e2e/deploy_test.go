@@ -140,7 +140,7 @@ var _ = Describe("Elastalert Controller", func() {
 					Namespace: "default",
 				}, RuleConfigMap)
 				return compare(RuleConfigMap.Data["test-elastalert.yaml"], RuleSample1) && compare(RuleConfigMap.Data["check-elastalert.yaml"], RuleSample2)
-			}, timeout, interval).Should(Succeed())
+			}, timeout, interval).Should(Equal(true))
 
 			By("Check cert secret.")
 			Eventually(func() error {
