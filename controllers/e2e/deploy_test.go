@@ -5,15 +5,63 @@ import (
 	"elastalert/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"time"
 )
 
 const interval = time.Second * 1
 const timeout = time.Second * 30
+
+var (
+	ConfigSample = map[string]interface{}{
+		"es_host":         "es.com.cn",
+		"es_port":         9200,
+		"use_ssl":         true,
+		"es_username":     "elastic",
+		"es_password":     "changeme",
+		"verify_certs":    false,
+		"writeback_index": "elastalert",
+		"run_every": map[string]interface{}{
+			"minutes": 1,
+		},
+		"buffer_time": map[string]interface{}{
+			"minutes": 15,
+		},
+	}
+	RuleSample1 = map[string]interface{}{
+		"name":  "test-elastalert",
+		"type":  "any",
+		"index": "api-*",
+		"filter": []map[string]interface{}{
+			{
+				"query": map[string]interface{}{
+					"query_string": map[string]interface{}{
+						"query": "http_status_code: 503",
+					},
+				},
+			},
+		},
+	}
+	RuleSample2 = map[string]interface{}{
+		"name":  "check-elastalert",
+		"type":  "aggs",
+		"index": "kpi-*",
+		"filter": []map[string]interface{}{
+			{
+				"query": map[string]interface{}{
+					"query_string": map[string]interface{}{
+						"query": "http_status_code: 600",
+					},
+				},
+			},
+		},
+	}
+)
 
 var _ = Describe("Elastalert Controller", func() {
 	BeforeEach(func() {
@@ -46,39 +94,12 @@ var _ = Describe("Elastalert Controller", func() {
 					Name:      key.Name,
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
-						"es_host":         "es.com.cn",
-						"es_port":         9200,
-						"use_ssl":         true,
-						"es_username":     "elastic",
-						"es_password":     "changeme",
-						"verify_certs":    false,
-						"writeback_index": "elastalert",
-						"run_every": map[string]interface{}{
-							"minutes": 1,
-						},
-						"buffer_time": map[string]interface{}{
-							"minutes": 15,
-						},
-					}),
+					ConfigSetting: v1alpha1.NewFreeForm(ConfigSample),
 					Rule: []v1alpha1.FreeForm{
-						v1alpha1.NewFreeForm(map[string]interface{}{
-							"name":  "test-elastalert",
-							"type":  "any",
-							"index": "api-*",
-							"filter": []map[string]interface{}{
-								{
-									"query": map[string]interface{}{
-										"query_string": map[string]interface{}{
-											"query": "http_status_code: 503",
-										},
-									},
-								},
-							},
-						}),
+						v1alpha1.NewFreeForm(RuleSample1),
+						v1alpha1.NewFreeForm(RuleSample2),
 					},
 					Alert: v1alpha1.NewFreeForm(map[string]interface{}{
-
 						"alert": []string{
 							"post",
 						},
@@ -101,21 +122,23 @@ var _ = Describe("Elastalert Controller", func() {
 			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
 
 			By("Check config.yaml configmap.")
-			Eventually(func() error {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{
+			Eventually(func() bool {
+				configConfigMap := &v1.ConfigMap{}
+				_ = k8sClient.Get(context.Background(), types.NamespacedName{
 					Name:      "e2e-elastalert-config",
 					Namespace: "default",
-				}, &v1.ConfigMap{})
-				return err
-			}, timeout, interval).Should(Succeed())
+				}, configConfigMap)
+				return compare(configConfigMap.Data["config.yaml"], ConfigSample)
+			}, timeout, interval).Should(Equal(true))
 
 			By("Check rules configmap.")
-			Eventually(func() error {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{
+			Eventually(func() bool {
+				RuleConfigMap := &v1.ConfigMap{}
+				_ = k8sClient.Get(context.Background(), types.NamespacedName{
 					Name:      "e2e-elastalert-rule",
 					Namespace: "default",
-				}, &v1.ConfigMap{})
-				return err
+				}, RuleConfigMap)
+				return compare(RuleConfigMap.Data["test-elastalert.yaml"], RuleSample1) && compare(RuleConfigMap.Data["check-elastalert.yaml"], RuleSample2)
 			}, timeout, interval).Should(Succeed())
 
 			By("Check cert secret.")
@@ -171,3 +194,9 @@ var _ = Describe("Elastalert Controller", func() {
 		})
 	})
 })
+
+func compare(source string, dest map[string]interface{}) bool {
+	var data = make(map[string]interface{})
+	_ = yaml.Unmarshal([]byte(source), &data)
+	return reflect.DeepEqual(data, dest)
+}
