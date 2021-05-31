@@ -17,6 +17,8 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"testing"
 
@@ -77,4 +79,11 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
+	_ = k8sClient.Delete(context.Background(),
+		&esv1alpha1.Elastalert{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: Key.Namespace,
+				Name:      Key.Name,
+			},
+		})
 })

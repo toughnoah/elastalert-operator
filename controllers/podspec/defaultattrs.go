@@ -11,7 +11,7 @@ import (
 
 const (
 	// DefaultTerminationGracePeriodSeconds is the termination grace period for the Elasalert containers
-	DefaultTerminationGracePeriodSeconds int64 = 30
+	DefaultTerminationGracePeriodSeconds int64 = 10
 	DefaultElastAlertName                      = "elastalert"
 	DefautlImage                               = "toughnoah/elastalert:v1.0"
 	DefaultCertVolumeName                      = "elasticsearch-cert"
