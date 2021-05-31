@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"elastalert/api/v1alpha1"
-	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
@@ -198,9 +197,6 @@ var _ = Describe("Elastalert Controller", func() {
 })
 
 func compare(source string, dest map[string]interface{}) bool {
-	var data = make(map[string]interface{})
-	_ = yaml.Unmarshal([]byte(source), &data)
-	fmt.Println(data)
-	fmt.Println(dest)
-	return reflect.DeepEqual(data, dest)
+	out, _ := yaml.Marshal(dest)
+	return reflect.DeepEqual([]byte(source), out)
 }
