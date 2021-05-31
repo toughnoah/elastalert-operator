@@ -56,6 +56,7 @@ var _ = BeforeSuite(func() {
 		CRDDirectoryPaths:     []string{filepath.Join("../../", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 		UseExistingCluster:    &t,
+		CRDInstallOptions:     envtest.CRDInstallOptions{CleanUpAfterUse: true},
 	}
 
 	cfg, err := testEnv.Start()
