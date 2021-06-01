@@ -14,16 +14,17 @@ To install the operator, please refer to those yamls in`deploy` directory.
 
 Args for Operator:
 ```console
---health-probe-bind-address string
+# /manager -h
+-health-probe-bind-address string
 The address the probe endpoint binds to. (default ":8081")
 
---leader-elect bool
+-leader-elect bool
 Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager. (default false)
 
---metrics-bind-address string
+-metrics-bind-address string
 The address the metric endpoint binds to. (default ":8080")
 
---zap-log-level string
+-zap-log-level string
 Zap Level to configure the verbosity of logging. Can be one of debug, info, error. (default info)
 ```
 
@@ -32,7 +33,7 @@ Zap Level to configure the verbosity of logging. Can be one of debug, info, erro
 
 Once the `elastalert-operator` deployment in the namespace `alert` is ready, create an Elastalert instance in any namespace, like:
 
-```
+```console
 kubectl apply -n alert -f - <<EOF
 apiVersion: es.noah.domain/v1alpha1
 kind: Elastalert
@@ -214,6 +215,22 @@ spec:
 EOF
 ```
 You can override the default command here.
+
+### Build Your Own Elastalert Dockerfile.
+
+~~~
+FROM docker.io/library/python:3.7.4-alpine
+
+RUN apk add gcc g++ make libffi-dev openssl-dev
+
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
+
+RUN pip install --upgrade pip
+
+RUN pip install elastalert
+
+ENTRYPOINT ["elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"]
+~~~
 
 ### Notice
 You don't have to specify `rules_folder` in config section, because operator will auto patch `rules_folder: /etc/elastalert/rules/..data/` for your config.

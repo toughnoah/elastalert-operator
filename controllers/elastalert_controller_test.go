@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-var TerminationGracePeriodSeconds int64 = 30
+var TerminationGracePeriodSeconds int64 = 10
 var Replicas int32 = 1
 var varTrue = true
 
