@@ -205,7 +205,7 @@ func TestDeploymentReconcile(t *testing.T) {
 									Name: "elasticsearch-cert",
 									VolumeSource: corev1.VolumeSource{
 										Secret: &corev1.SecretVolumeSource{
-											SecretName: "elasticsearch-cert",
+											SecretName: "test-elastalert-es-cert",
 										},
 									},
 								},
