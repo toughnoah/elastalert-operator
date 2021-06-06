@@ -33,7 +33,7 @@ Zap Level to configure the verbosity of logging. Can be one of debug, info, erro
 
 Once the `elastalert-operator` deployment in the namespace `alert` is ready, create an Elastalert instance in any namespace, like:
 
-```console
+```
 kubectl apply -n alert -f - <<EOF
 apiVersion: es.noah.domain/v1alpha1
 kind: Elastalert
@@ -102,11 +102,11 @@ elastalert-rule           1     10m
 ```
 Above mentioned configmaps will be mounted to `/etc/elastalert` and `/etc/elastalert/rule` as `config.yaml` and `rule` yaml named by its `["name"]`
 ```console
-/etc/elastalert # ls
+# /etc/elastalert  ls
 config.yaml  rules
 ```
 ```console
-/etc/elastalert/rules # ls
+# /etc/elastalert/rules ls
 error-message.yaml      error-status-code.yaml
 ```
 ## What's more
