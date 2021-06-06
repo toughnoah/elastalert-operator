@@ -102,8 +102,8 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.V(1).Info("Apply deployment successfully", "Deployment.Namespace", req.Namespace)
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply deployment successfully.")
 		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
-			log.Error(err, "Deployment stabilize failed ", "Deployment.Namespace", req.Namespace)
-			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply deployment.")
+			log.Error(err, "Deployment stabilized failed ", "Deployment.Namespace", req.Namespace)
+			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to stabilize deployment.")
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
