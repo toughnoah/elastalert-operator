@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpec, error) {
+func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) corev1.PodTemplateSpec {
 	DefaultAnnotations := map[string]string{
 		"kubectl.kubernetes.io/restartedAt": GetUtcTimeString(),
 	}
@@ -59,7 +59,7 @@ func BuildPodTemplateSpec(elastalert v1alpha1.Elastalert) (corev1.PodTemplateSpe
 			SuccessThreshold:    1,
 			FailureThreshold:    3,
 		})
-	return builder.PodTemplate, nil
+	return builder.PodTemplate
 }
 
 func buildVolumes(eaName string) ([]corev1.Volume, []corev1.VolumeMount) {

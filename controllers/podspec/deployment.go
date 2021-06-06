@@ -23,23 +23,17 @@ type PodTemplateBuilder struct {
 }
 
 func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
-	deploy, err := BuildDeployment(*e)
-	if err != nil {
-		return nil, err
-	}
+	deploy := BuildDeployment(*e)
 	if err := ctrl.SetControllerReference(e, deploy, Scheme); err != nil {
 		return nil, err
 	}
 	return deploy, nil
 }
 
-func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error) {
+func BuildDeployment(elastalert v1alpha1.Elastalert) *appsv1.Deployment {
 	var replicas = new(int32)
 	*replicas = 1
-	podTemplate, err := BuildPodTemplateSpec(elastalert)
-	if err != nil {
-		return nil, err
-	}
+	podTemplate := BuildPodTemplateSpec(elastalert)
 	varTrue := true
 	//deliberate action to enable
 	podTemplate.Spec.AutomountServiceAccountToken = &varTrue
@@ -57,7 +51,7 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) (*appsv1.Deployment, error)
 			Template: podTemplate,
 		},
 	}
-	return deploy, nil
+	return deploy
 }
 
 func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
