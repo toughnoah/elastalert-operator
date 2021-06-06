@@ -764,8 +764,7 @@ func TestBuildPodTemplateSpec(t *testing.T) {
 			monkey.Patch(GetUtcTimeString, func() string {
 				return "2021-05-17T01:38:44+08:00"
 			})
-			have, err := BuildPodTemplateSpec(tc.elastalert)
-			require.NoError(t, err)
+			have := BuildPodTemplateSpec(tc.elastalert)
 			require.Equal(t, tc.want, have)
 		})
 	}
@@ -930,9 +929,7 @@ func TestBuildDeployment(t *testing.T) {
 			monkey.Patch(GetUtcTimeString, func() string {
 				return "2021-05-17T01:38:44+08:00"
 			})
-			have, err := BuildDeployment(tc.elastalert)
-			require.NoError(t, err)
-
+			have := BuildDeployment(tc.elastalert)
 			have.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = "2021-05-17T01:38:44+08:00"
 			require.Equal(t, tc.want, *have)
 		})
