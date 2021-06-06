@@ -81,8 +81,8 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.V(1).Info("Apply secret success", "Configmaps.Namespace", req.Namespace)
-
+		log.V(1).Info("Apply secret successfully", "Secret.Namespace", req.Namespace)
+		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply secret successfully.")
 		if err := applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply configmaps.")
@@ -92,7 +92,8 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.V(1).Info("Apply configmaps success", "Secret.Namespace", req.Namespace)
+		log.V(1).Info("Apply configmaps successfully", "Configmaps.Namespace", req.Namespace)
+		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply configmaps successfully.")
 		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert)
 		if err != nil {
 			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
@@ -103,8 +104,11 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
+		log.V(1).Info("Apply deployment successfully", "Deployment.Namespace", req.Namespace)
+		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply deployment successfully.")
 		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
 			log.Error(err, "Deployment stabilize failed ", "Deployment.Namespace", req.Namespace)
+			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply deployment.")
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
