@@ -56,12 +56,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	log.V(1).Info("Start Elastalert reconciliation.", "Elastalert.Namespace", req.Namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			r.Recorder.Eventf(&esv1alpha1.Elastalert{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      req.Name,
-					Namespace: req.Namespace,
-				},
-			}, corev1.EventTypeNormal, event.EventReasonDeleted, "elastalert instance has been deleted.")
+			r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonDeleted, "elastalert instance has been deleted.")
 
 			log.V(1).Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
 			return ctrl.Result{}, nil
@@ -81,11 +76,11 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.V(1).Info("Apply secret successfully", "Secret.Namespace", req.Namespace)
-		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply secret successfully.")
+		log.V(1).Info("Apply cert secret successfully", "Secret.Namespace", req.Namespace)
+		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply cert secret successfully.")
 		if err := applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
-			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply configmaps.")
+			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply configmaps")
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
