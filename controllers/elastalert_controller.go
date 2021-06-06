@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
+	"elastalert/controllers/event"
 	"elastalert/controllers/podspec"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,17 +29,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+//todo EventRecordder should be added!
+
 // ElastalertReconciler reconciles a Elastalert object
 type ElastalertReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=es.noah.domain,resources=elastalerts,verbs=get;list;watch;create;update;patch;delete
@@ -48,9 +53,16 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	log := r.Log.WithValues("elastalert", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
-	log.V(1).Info("Start Elastalert reconciliation.", "Deployment.Namespace", req.Namespace)
+	log.V(1).Info("Start Elastalert reconciliation.", "Elastalert.Namespace", req.Namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
+			r.Recorder.Eventf(&esv1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      req.Name,
+					Namespace: req.Namespace,
+				},
+			}, corev1.EventTypeNormal, event.EventReasonDeleted, "elastalert instance has been deleted.")
+
 			log.V(1).Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
@@ -62,6 +74,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
 		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply Secret", "Secret.Namespace", req.Namespace)
+			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply Secret.")
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
@@ -72,6 +85,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 
 		if err := applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
+			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply configmaps.")
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
@@ -82,6 +96,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert)
 		if err != nil {
 			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
+			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply deployment.")
 			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
@@ -96,12 +111,14 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			}
 			return ctrl.Result{}, err
 		}
-		log.V(1).Info("Deployment has stabilized", "Deployment.Namespace", req.Namespace)
+		log.V(1).Info("Deployment has been stabilized", "Deployment.Namespace", req.Namespace)
+		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "deployment has been stabilized.")
 		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
-		log.V(1).Info("Reconcile Elastalert resource success.", "Elastalert.Namespace", req.Namespace)
+		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "reconcile Elastalert resources successfully.")
+		log.V(1).Info("Reconcile Elastalert resources successfully.", "Elastalert.Namespace", req.Namespace)
 		return ctrl.Result{}, nil
 
 	}
