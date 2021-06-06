@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -482,9 +483,10 @@ func TestReconcile(t *testing.T) {
 			defer monkey.Unpatch(podspec.WaitForStability)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
-				Client: tc.c,
-				Log:    log,
-				Scheme: s,
+				Client:   tc.c,
+				Log:      log,
+				Scheme:   s,
+				Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
 			}
 			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
 			req := reconcile.Request{NamespacedName: nsn}
@@ -568,9 +570,10 @@ func TestReconcileApplyDeploymentFailed(t *testing.T) {
 			defer monkey.Unpatch(UpdateElastalertStatus)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
-				Client: tc.c,
-				Log:    log,
-				Scheme: s,
+				Client:   tc.c,
+				Log:      log,
+				Scheme:   s,
+				Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
 			}
 			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
 			req := reconcile.Request{NamespacedName: nsn}
