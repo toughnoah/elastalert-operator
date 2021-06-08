@@ -371,6 +371,75 @@ func TestReconcile(t *testing.T) {
 							}),
 						},
 					},
+					Status: v1alpha1.ElastalertStatus{
+						Version: "v1.0",
+						Phase:   "RUNNING",
+						Condictions: []metav1.Condition{
+							{
+								Type:               "Progressing",
+								Status:             "True",
+								ObservedGeneration: int64(1),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								Reason:             "NewElastAlertAvailable",
+								Message:            "ElastAlert my-esa has successfully progressed.",
+							},
+						},
+					},
+				},
+			).Build(),
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					Cert: "abdec",
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			desc: "test elastalert reconcile failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:  "esa1",
+						Name:       "my-esa",
+						Generation: int64(2),
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						Cert: "abc",
+						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+							"config": "test",
+						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
+						},
+					},
+					Status: v1alpha1.ElastalertStatus{
+						Version: "v1.0",
+						Phase:   "RUNNING",
+						Condictions: []metav1.Condition{
+							{
+								Type:               "Progressing",
+								Status:             "True",
+								ObservedGeneration: int64(1),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								Reason:             "NewElastAlertAvailable",
+								Message:            "ElastAlert my-esa has successfully progressed.",
+							},
+						},
+					},
 				},
 			).Build(),
 			elastalert: v1alpha1.Elastalert{
@@ -500,14 +569,100 @@ func TestReconcile(t *testing.T) {
 				assert.NoError(t, err)
 			} else {
 				monkey.Patch(tc.testFunc, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) error {
-					return errors.New("test")
+					return errors.New("test apply func failed")
 				})
 				monkey.Patch(ob.UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
 					return errors.New("test update failed")
 				})
+				monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
+					return errors.New("test WaitForStability failed")
+				})
 				_, err := r.Reconcile(context.Background(), req)
 				assert.Error(t, err)
 			}
+		})
+	}
+}
+
+func TestReconcileFailed(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	testCases := []struct {
+		desc       string
+		elastalert v1alpha1.Elastalert
+		c          client.Client
+	}{
+		{
+			desc: "test elastalert reconcile success",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:  "esa1",
+						Name:       "my-esa",
+						Generation: int64(2),
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						Cert: "abc",
+						ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+							"config": "test",
+						}),
+						Rule: []v1alpha1.FreeForm{
+							v1alpha1.NewFreeForm(map[string]interface{}{
+								"name": "test-elastalert", "type": "any",
+							}),
+						},
+					},
+					Status: v1alpha1.ElastalertStatus{
+						Version: "v1.0",
+						Phase:   "RUNNING",
+						Condictions: []metav1.Condition{
+							{
+								Type:               "Progressing",
+								Status:             "True",
+								ObservedGeneration: int64(1),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								Reason:             "NewElastAlertAvailable",
+								Message:            "ElastAlert my-esa has successfully progressed.",
+							},
+						},
+					},
+				},
+			).Build(),
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					Cert: "abdec",
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
+						"config": "test",
+					}),
+					Rule: []v1alpha1.FreeForm{
+						v1alpha1.NewFreeForm(map[string]interface{}{
+							"name": "test-elastalert", "type": "any",
+						}),
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			defer monkey.Unpatch(ob.UpdateElastalertStatus)
+			log := ctrl.Log.WithName("test").WithName("Elastalert")
+			r := &ElastalertReconciler{
+				Client:   tc.c,
+				Log:      log,
+				Scheme:   s,
+				Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
+				Observer: *ob.NewManager(),
+			}
+			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
+			req := reconcile.Request{NamespacedName: nsn}
+
+			_, err := r.Reconcile(context.Background(), req)
+			assert.Error(t, err)
 		})
 	}
 }
@@ -744,6 +899,55 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "test to update initializing status",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "esa1",
+						Name:      "my-esa",
+					},
+					Status: v1alpha1.ElastalertStatus{
+						Condictions: []metav1.Condition{
+							{
+								Type:               "Progressing",
+								Status:             "True",
+								ObservedGeneration: int64(1),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
+								Reason:             "NewElastAlertAvailable",
+								Message:            "ElastAlert my-esa has successfully progressed.",
+							},
+						},
+					},
+				}).Build(),
+			cond: metav1.Condition{
+				Type: v1alpha1.ElastAlertResourcesCreating,
+			},
+			want: v1alpha1.Elastalert{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Elastalert",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Status: v1alpha1.ElastalertStatus{
+					Version: "v1.0",
+					Phase:   "INITIALIZING",
+					Condictions: []metav1.Condition{
+						{
+							Type:               "Progressing",
+							Status:             "True",
+							ObservedGeneration: int64(1),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
+							Reason:             "NewElastAlertAvailable",
+							Message:            "ElastAlert my-esa has successfully progressed.",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -759,6 +963,7 @@ func TestUpdateStatus(t *testing.T) {
 				Namespace: "esa1",
 				Name:      "my-esa",
 			}, &esa)
+
 			err = ob.UpdateStatus(r.Client, context.Background(), &esa, tc.cond)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want.Status, esa.Status)
@@ -774,7 +979,7 @@ func TestNewCondition(t *testing.T) {
 		want       metav1.Condition
 	}{
 		{
-			name: "test success condition",
+			name: "test failed condition",
 			flag: "failed",
 			elastalert: v1alpha1.Elastalert{
 				ObjectMeta: metav1.ObjectMeta{
@@ -790,6 +995,39 @@ func TestNewCondition(t *testing.T) {
 				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
 				Reason:             "ElastAlertUnAvailable",
 				Message:            "Failed to apply ElastAlert my-esa resources.",
+			},
+		},
+		{
+			name: "test success condition",
+			flag: "success",
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:  "esa1",
+					Name:       "my-esa",
+					Generation: int64(1),
+				},
+			},
+			want: metav1.Condition{
+				Type:               "Progressing",
+				Status:             "True",
+				ObservedGeneration: int64(1),
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				Reason:             "NewElastAlertAvailable",
+				Message:            "ElastAlert my-esa has successfully progressed.",
+			},
+		},
+		{
+			name: "test starting condition",
+			flag: "starting",
+			elastalert: v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:  "esa1",
+					Name:       "my-esa",
+					Generation: int64(1),
+				},
+			},
+			want: metav1.Condition{
+				Type: "starting",
 			},
 		},
 	}
@@ -885,6 +1123,32 @@ func TestUpdateElastalertStatus(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "test to update elasalert initializing status",
+			flag: "starting",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:  "esa1",
+						Name:       "my-esa",
+						Generation: int64(1),
+					},
+				}).Build(),
+			want: v1alpha1.Elastalert{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Elastalert",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "esa1",
+					Name:      "my-esa",
+				},
+				Status: v1alpha1.ElastalertStatus{
+					Version: "v1.0",
+					Phase:   "INITIALIZING",
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -909,4 +1173,23 @@ func TestUpdateElastalertStatus(t *testing.T) {
 			assert.Equal(t, tc.want.Status, esa.Status)
 		})
 	}
+}
+
+func TestElastalertReconciler_SetupWithManager(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	var log = ctrl.Log.WithName("test").WithName("Elastalert")
+	r := &ElastalertReconciler{
+		Client: fake.NewClientBuilder().WithRuntimeObjects(
+			&v1alpha1.Elastalert{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:  "esa1",
+					Name:       "my-esa",
+					Generation: int64(1),
+				},
+			}).Build(),
+		Log:    log,
+		Scheme: s,
+	}
+	assert.Error(t, r.SetupWithManager(nil))
 }

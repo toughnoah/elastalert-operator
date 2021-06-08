@@ -363,3 +363,62 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 		})
 	}
 }
+
+func TestDeploymentReconcileFailedWithNoMock(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	testCases := []struct {
+		desc string
+		c    client.Client
+	}{
+		{
+			desc: "test deployment reconcile failed",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "test",
+						Name:      "test-elastalert",
+					},
+					Spec: v1alpha1.ElastalertSpec{
+						PodTemplateSpec: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "elastalert",
+									},
+								},
+							},
+						},
+					},
+				}).Build(),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			log := ctrl.Log.WithName("test").WithName("Elastalert")
+			r := &DeploymentReconciler{
+				Client: tc.c,
+				Log:    log,
+				Scheme: s,
+			}
+			ctx := context.Background()
+			nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
+			req := reconcile.Request{NamespacedName: nsn}
+			_, err := r.Reconcile(ctx, req)
+			assert.Error(t, err)
+		})
+	}
+}
+
+func TestDeploymentReconciler_SetupWithManager(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(appsv1.SchemeGroupVersion)
+	var log = ctrl.Log.WithName("test").WithName("Deployment")
+	r := &DeploymentReconciler{
+		Client: fake.NewClientBuilder().WithRuntimeObjects().Build(),
+		Log:    log,
+		Scheme: s,
+	}
+	assert.Error(t, r.SetupWithManager(nil))
+
+}

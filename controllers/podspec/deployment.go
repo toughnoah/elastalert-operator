@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 var log = ctrl.Log.WithName("Deployment")
@@ -59,32 +58,32 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) *appsv1.Deployment {
 func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
 	// the images, subsequent runs should take only a few seconds
 	seen := false
-	return wait.Poll(5*time.Second, 2*time.Minute,
-		func() (done bool, err error) {
-			d := &appsv1.Deployment{}
-			if err := c.Get(ctx, types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, d); err != nil {
-				if k8serrors.IsNotFound(err) {
-					if seen {
-						// we have seen this object before, but it doesn't exist anymore!
-						// we don't have anything else to do here, break the poll
-						//"Deployment has been removed."
-						log.V(1).Info("Have seen this deployment before, but it doesn't exist anymore!", "deployment", dep.Name)
-						return true, err
-					}
-					// the object might have not been created yet
-					//"Deployment doesn't exist yet."
-					log.V(1).Info("Deployment doesn't exist yet.", "deployment", dep.Name)
-					return false, nil
+	res := wait.Poll(v1alpha1.ElastAlertPollInterval, v1alpha1.ElastAlertPollTimeout, func() (done bool, err error) {
+		d := &appsv1.Deployment{}
+		if err := c.Get(ctx, types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, d); err != nil {
+			if k8serrors.IsNotFound(err) {
+				if seen {
+					// we have seen this object before, but it doesn't exist anymore!
+					// we don't have anything else to do here, break the poll
+					//"Deployment has been removed."
+					log.V(1).Info("Have seen this deployment before, but it doesn't exist anymore!", "deployment", dep.Name)
+					return true, err
 				}
-				return false, err
-			}
-			seen = true
-			if d.Status.AvailableReplicas != *d.Spec.Replicas {
-				//"Deployment has not stabilized yet"
-				log.V(1).Info(fmt.Sprintf("Deployment has not stabilized yet, expected %d, got %d.", *d.Spec.Replicas, d.Status.AvailableReplicas), "deployment", dep.Name)
+				// the object might have not been created yet
+				//"Deployment doesn't exist yet."
+				log.V(1).Info("Deployment doesn't exist yet.", "deployment", dep.Name)
 				return false, nil
 			}
-			//"Deployment has stabilized"
-			return true, nil
-		})
+			return false, err
+		}
+		seen = true
+		if d.Status.AvailableReplicas != *d.Spec.Replicas {
+			//"Deployment has not stabilized yet"
+			log.V(1).Info(fmt.Sprintf("Deployment has not stabilized yet, expected %d, got %d.", *d.Spec.Replicas, d.Status.AvailableReplicas), "deployment", dep.Name)
+			return false, nil
+		}
+		//"Deployment has stabilized"
+		return true, nil
+	})
+	return res
 }

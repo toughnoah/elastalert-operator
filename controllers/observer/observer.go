@@ -143,7 +143,7 @@ func (m *Manager) createOrReplaceObserver(elastalert types.NamespacedName, c cli
 	m.observerLock.Lock()
 	defer m.observerLock.Unlock()
 
-	observer := NewObserver(c, elastalert, time.Minute*1)
+	observer := NewObserver(c, elastalert, esv1alpha1.ElastAlertObserveInterval)
 	observer.Start()
 
 	m.observers[elastalert] = observer
@@ -178,6 +178,8 @@ func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert
 		e.Status.Phase = esv1alpha1.ElastAlertPhraseFailed
 		meta.SetStatusCondition(&e.Status.Condictions, condition)
 		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
+	case esv1alpha1.ElastAlertResourcesCreating:
+		e.Status.Phase = esv1alpha1.ElastAlertInitializing
 	}
 	e.Status.Version = esv1alpha1.ElastAlertVersion
 	if err := c.Status().Update(ctx, e); err != nil {
@@ -206,6 +208,10 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
 			Reason:             esv1alpha1.ElastAlertUnAvailableReason,
 			Message:            "Failed to apply ElastAlert " + e.Name + " resources.",
+		}
+	case esv1alpha1.ElastAlertResourcesCreating:
+		condition = &metav1.Condition{
+			Type: esv1alpha1.ElastAlertResourcesCreating,
 		}
 	}
 	return condition

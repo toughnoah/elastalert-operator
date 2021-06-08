@@ -20,11 +20,14 @@ package v1alpha1
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 const (
 	// +k8s:openapi-gen=true
 	ElastAlertPhraseFailed = "FAILED"
+
+	ElastAlertInitializing = "INITIALIZING"
 	// +k8s:openapi-gen=true
 	ElastAlertPhraseSucceeded = "RUNNING"
 
@@ -40,6 +43,8 @@ const (
 
 	ElastAlertUnAvailableStatus = "False"
 
+	ElastAlertResourcesCreating = "starting"
+
 	ActionSuccess = "success"
 
 	ActionFailed = "failed"
@@ -53,6 +58,12 @@ const (
 	RuleMountPath = "/etc/elastalert/rules"
 
 	ConfigMountPath = "/etc/elastalert"
+
+	ElastAlertObserveInterval = time.Minute
+
+	ElastAlertPollInterval = time.Second * 5
+
+	ElastAlertPollTimeout = time.Minute * 2
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

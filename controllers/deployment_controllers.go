@@ -39,19 +39,24 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	newDeploy, err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert)
 	if err != nil {
 		log.Error(err, "Failed to recreate Deployment by steps", "Deployment.Namespace", req.Namespace)
-		if err := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
-			log.Error(err, "Failed to update elastalert status")
-			return ctrl.Result{}, err
+		if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+			log.Error(statusError, "Failed to update elastalert status")
+			return ctrl.Result{}, statusError
 		}
 		return ctrl.Result{}, err
 	}
 	if newDeploy != nil {
+		log.V(1).Info("Change elastalert status to initializing.", "Deployment.Namespace", req.Namespace)
+		if err = ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ElastAlertResourcesCreating); err != nil {
+			log.Error(err, "Failed to update elastalert initializing status")
+			return ctrl.Result{}, err
+		}
 		log.V(1).Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
 		if err := podspec.WaitForStability(r.Client, ctx, *newDeploy); err != nil {
 			log.Error(err, "Failed to stabilized Deployment.", "Deployment.Namespace", req.Namespace)
-			if err = ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
-				log.Error(err, "Failed to update elastalert status")
-				return ctrl.Result{}, err
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				log.Error(statusError, "Failed to update elastalert status")
+				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
