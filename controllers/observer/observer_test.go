@@ -530,7 +530,7 @@ var _ = Describe("Test Observer", func() {
 					elastalert := &v1alpha1.Elastalert{}
 					_ = tc.client.Get(context.Background(), ea, elastalert)
 					return elastalert.Status.Phase == tc.eaPhase
-				}, time.Minute, time.Second).Should(Equal(true))
+				}, 2*time.Minute, time.Second).Should(Equal(true))
 			}
 		})
 	})

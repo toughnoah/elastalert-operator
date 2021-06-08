@@ -64,7 +64,6 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get Elastalert from server")
 		return ctrl.Result{}, err
 	}
-	r.Observer.Observe(elastalert, r.Client)
 	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
 		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
@@ -116,11 +115,13 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
+		r.startObservingHealth(elastalert)
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "reconcile Elastalert resources successfully.")
 		log.V(1).Info("Reconcile Elastalert resources successfully.", "Elastalert.Namespace", req.Namespace)
 		return ctrl.Result{}, nil
 
 	}
+
 	log.V(1).Info("condition.ObservedGeneration and elastalert.Generation matched. Skipping reconciliation", "Elastalert.Namespace", req.Namespace)
 	return ctrl.Result{}, nil
 }
@@ -241,4 +242,8 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}
 		return deploy, nil
 	}
+}
+
+func (r *ElastalertReconciler) startObservingHealth(e *esv1alpha1.Elastalert) {
+	r.Observer.Observe(e, r.Client)
 }
