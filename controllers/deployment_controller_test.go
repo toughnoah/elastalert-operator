@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"elastalert/api/v1alpha1"
+	"elastalert/controllers/observer"
 	"elastalert/controllers/podspec"
 	"errors"
 	"github.com/bouk/monkey"
@@ -327,7 +328,7 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		defer monkey.Unpatch(recreateDeployment)
-		defer monkey.Unpatch(UpdateElastalertStatus)
+		defer monkey.Unpatch(observer.UpdateElastalertStatus)
 		defer monkey.Unpatch(podspec.WaitForStability)
 		t.Run(tc.desc, func(t *testing.T) {
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
@@ -340,7 +341,7 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 				monkey.Patch(recreateDeployment, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
 					return nil, errors.New("test")
 				})
-				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+				monkey.Patch(observer.UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
 					return errors.New("test update failed")
 				})
 			} else {
@@ -350,7 +351,7 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 				monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
 					return errors.New("test")
 				})
-				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+				monkey.Patch(observer.UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
 					return errors.New("test update failed")
 				})
 			}

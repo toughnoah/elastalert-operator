@@ -21,20 +21,30 @@ func TestFreeForm(t *testing.T) {
 	assert.Equal(t, uiconfig, string(*o.json))
 }
 
-func TestFreeFormUnmarhalMarshal(t *testing.T) {
+func TestFreeFormUnmarshalMarshal(t *testing.T) {
 	uiconfig := `{"es":{"password":"changeme","server-urls":"http://elasticsearch:9200","username":"elastic"}}`
 	o := NewFreeForm(nil)
-	o.UnmarshalJSON([]byte(uiconfig))
+	_ = o.UnmarshalJSON([]byte(uiconfig))
 	json, err := o.MarshalJSON()
 	assert.NoError(t, err)
 	assert.NotNil(t, json)
 	assert.Equal(t, uiconfig, string(*o.json))
 }
 
-func TestFreeFormListUnmarhalMarshal(t *testing.T) {
+func TestFreeFormListUnmarshalMarshal(t *testing.T) {
 	testconfig := `[{"es":{"password":"changeme","server-urls":"http://elasticsearch:9200","username":"elastic"}},{"es2":{"password":"changeme","server-urls":"http://elasticsearch:9200","username":"elastic"}}]`
 	o := NewFreeForm(nil)
-	o.UnmarshalJSON([]byte(testconfig))
+	_ = o.UnmarshalJSON([]byte(testconfig))
+	json, err := o.MarshalJSON()
+	assert.NoError(t, err)
+	assert.NotNil(t, json)
+	assert.Equal(t, testconfig, string(*o.json))
+}
+
+func TestFreeFormNilUnmarshalMarshal(t *testing.T) {
+	testconfig := ``
+	o := NewFreeForm(nil)
+	_ = o.UnmarshalJSON([]byte(testconfig))
 	json, err := o.MarshalJSON()
 	assert.NoError(t, err)
 	assert.NotNil(t, json)

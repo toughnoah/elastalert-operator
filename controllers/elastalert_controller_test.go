@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"elastalert/api/v1alpha1"
+	ob "elastalert/controllers/observer"
 	"elastalert/controllers/podspec"
 	"errors"
 	"github.com/bouk/monkey"
@@ -479,7 +480,7 @@ func TestReconcile(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			defer monkey.Unpatch(tc.testFunc)
-			defer monkey.Unpatch(UpdateElastalertStatus)
+			defer monkey.Unpatch(ob.UpdateElastalertStatus)
 			defer monkey.Unpatch(podspec.WaitForStability)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
@@ -487,6 +488,7 @@ func TestReconcile(t *testing.T) {
 				Log:      log,
 				Scheme:   s,
 				Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
+				Observer: *ob.NewManager(),
 			}
 			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
 			req := reconcile.Request{NamespacedName: nsn}
@@ -500,7 +502,7 @@ func TestReconcile(t *testing.T) {
 				monkey.Patch(tc.testFunc, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) error {
 					return errors.New("test")
 				})
-				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+				monkey.Patch(ob.UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
 					return errors.New("test update failed")
 				})
 				_, err := r.Reconcile(context.Background(), req)
@@ -567,7 +569,7 @@ func TestReconcileApplyDeploymentFailed(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			defer monkey.Unpatch(tc.testFunc)
-			defer monkey.Unpatch(UpdateElastalertStatus)
+			defer monkey.Unpatch(ob.UpdateElastalertStatus)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &ElastalertReconciler{
 				Client:   tc.c,
@@ -585,7 +587,7 @@ func TestReconcileApplyDeploymentFailed(t *testing.T) {
 					return nil, errors.New("test")
 				})
 
-				monkey.Patch(UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
+				monkey.Patch(ob.UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
 					return errors.New("test update failed")
 				})
 				_, err := r.Reconcile(context.Background(), req)
@@ -757,7 +759,7 @@ func TestUpdateStatus(t *testing.T) {
 				Namespace: "esa1",
 				Name:      "my-esa",
 			}, &esa)
-			err = UpdateStatus(r.Client, context.Background(), &esa, tc.cond)
+			err = ob.UpdateStatus(r.Client, context.Background(), &esa, tc.cond)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want.Status, esa.Status)
 		})
@@ -796,7 +798,7 @@ func TestNewCondition(t *testing.T) {
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
 				return time.Unix(0, 1233810057012345600)
 			})
-			have := NewCondition(&tc.elastalert, tc.flag)
+			have := ob.NewCondition(&tc.elastalert, tc.flag)
 			require.Equal(t, tc.want, *have)
 		})
 	}
@@ -902,7 +904,7 @@ func TestUpdateElastalertStatus(t *testing.T) {
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
 				return time.Unix(0, 1233810057012345600)
 			})
-			err = UpdateElastalertStatus(r.Client, context.Background(), &esa, tc.flag)
+			err = ob.UpdateElastalertStatus(r.Client, context.Background(), &esa, tc.flag)
 			require.NoError(t, err)
 			assert.Equal(t, tc.want.Status, esa.Status)
 		})

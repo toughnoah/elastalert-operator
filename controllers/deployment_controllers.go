@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
+	ob "elastalert/controllers/observer"
 	"elastalert/controllers/podspec"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -38,7 +39,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	newDeploy, err := recreateDeployment(r.Client, r.Scheme, ctx, elastalert)
 	if err != nil {
 		log.Error(err, "Failed to recreate Deployment by steps", "Deployment.Namespace", req.Namespace)
-		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
+		if err := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 			log.Error(err, "Failed to update elastalert status")
 			return ctrl.Result{}, err
 		}
@@ -48,7 +49,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.V(1).Info("Recreating deployment, stabilizing", "Deployment.Namespace", req.Namespace)
 		if err := podspec.WaitForStability(r.Client, ctx, *newDeploy); err != nil {
 			log.Error(err, "Failed to stabilized Deployment.", "Deployment.Namespace", req.Namespace)
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
+			if err = ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
 				log.Error(err, "Failed to update elastalert status")
 				return ctrl.Result{}, err
 			}

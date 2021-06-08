@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+var log = ctrl.Log.WithName("Deployment")
+
 type PodTemplateBuilder struct {
 	PodTemplate        corev1.PodTemplateSpec
 	containerName      string
@@ -57,8 +59,7 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) *appsv1.Deployment {
 func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
 	// the images, subsequent runs should take only a few seconds
 	seen := false
-	log := ctrl.Log.WithName("Deployment").WithValues("deployment", dep.Name)
-	return wait.Poll(time.Second, 2*time.Minute,
+	return wait.Poll(5*time.Second, 2*time.Minute,
 		func() (done bool, err error) {
 			d := &appsv1.Deployment{}
 			if err := c.Get(ctx, types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, d); err != nil {
