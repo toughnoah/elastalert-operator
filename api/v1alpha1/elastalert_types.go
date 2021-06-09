@@ -20,11 +20,14 @@ package v1alpha1
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 const (
 	// +k8s:openapi-gen=true
 	ElastAlertPhraseFailed = "FAILED"
+
+	ElastAlertInitializing = "INITIALIZING"
 	// +k8s:openapi-gen=true
 	ElastAlertPhraseSucceeded = "RUNNING"
 
@@ -40,6 +43,8 @@ const (
 
 	ElastAlertUnAvailableStatus = "False"
 
+	ElastAlertResourcesCreating = "starting"
+
 	ActionSuccess = "success"
 
 	ActionFailed = "failed"
@@ -53,7 +58,14 @@ const (
 	RuleMountPath = "/etc/elastalert/rules"
 
 	ConfigMountPath = "/etc/elastalert"
+
+	ElastAlertObserveInterval = time.Minute
+
+	ElastAlertPollInterval = time.Second * 5
 )
+
+// for gostub, it has to be a var.
+var ElastAlertPollTimeout = time.Minute * 3
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -78,7 +90,7 @@ type ElastalertSpec struct {
 type ElastalertStatus struct {
 	Version     string             `json:"version,omitempty"`
 	Phase       string             `json:"phase,omitempty"`
-	Condictions []metav1.Condition `json:"conditions"`
+	Condictions []metav1.Condition `json:"conditions,omitempty"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }

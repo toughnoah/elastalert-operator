@@ -20,13 +20,13 @@ import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
 	"elastalert/controllers/event"
+	ob "elastalert/controllers/observer"
 	"elastalert/controllers/podspec"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -36,14 +36,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-//todo EventRecordder should be added!
-
 // ElastalertReconciler reconciles a Elastalert object
 type ElastalertReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+	Observer ob.Manager
 }
 
 //+kubebuilder:rbac:groups=es.noah.domain,resources=elastalerts,verbs=get;list;watch;create;update;patch;delete
@@ -57,8 +56,8 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonDeleted, "elastalert instance has been deleted.")
-
 			log.V(1).Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
+			r.Observer.StopObserving(req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -67,23 +66,27 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	}
 	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
-		if err := applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
+		if err = ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ElastAlertResourcesCreating); err != nil {
+			log.Error(err, "Failed to update elastalert initializing status")
+			return ctrl.Result{}, err
+		}
+		if err = applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply Secret", "Secret.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply Secret.")
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
-				log.Error(err, "Failed to update elastalert status")
-				return ctrl.Result{}, err
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				log.Error(statusError, "Failed to update elastalert failed status")
+				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
 		log.V(1).Info("Apply cert secret successfully", "Secret.Namespace", req.Namespace)
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply cert secret successfully.")
-		if err := applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
+		if err = applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply configmaps")
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
-				log.Error(err, "Failed to update elastalert status")
-				return ctrl.Result{}, err
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				log.Error(statusError, "Failed to update elastalert failed status")
+				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
@@ -93,34 +96,36 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		if err != nil {
 			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply deployment.")
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
-				log.Error(err, "Failed to update elastalert status")
-				return ctrl.Result{}, err
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				log.Error(statusError, "Failed to update elastalert failed status")
+				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
 		log.V(1).Info("Apply deployment successfully", "Deployment.Namespace", req.Namespace)
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply deployment successfully.")
-		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
+		if err = podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
 			log.Error(err, "Deployment stabilized failed ", "Deployment.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to stabilize deployment.")
-			if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); err != nil {
-				log.Error(err, "Failed to update elastalert status")
-				return ctrl.Result{}, err
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				log.Error(statusError, "Failed to update elastalert failed status")
+				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
 		log.V(1).Info("Deployment has been stabilized", "Deployment.Namespace", req.Namespace)
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "deployment has been stabilized.")
-		if err := UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); err != nil {
-			log.Error(err, "Failed to update elastalert status")
-			return ctrl.Result{}, err
+		if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); statusError != nil {
+			log.Error(statusError, "Failed to update elastalert success status")
+			return ctrl.Result{}, statusError
 		}
+
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "reconcile Elastalert resources successfully.")
 		log.V(1).Info("Reconcile Elastalert resources successfully.", "Elastalert.Namespace", req.Namespace)
 		return ctrl.Result{}, nil
 
 	}
+	r.startObservingHealth(elastalert)
 	log.V(1).Info("condition.ObservedGeneration and elastalert.Generation matched. Skipping reconciliation", "Elastalert.Namespace", req.Namespace)
 	return ctrl.Result{}, nil
 }
@@ -132,30 +137,9 @@ func (r *ElastalertReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{MaxConcurrentReconciles: 5}).
 		Complete(r)
 }
-func UpdateElastalertStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, flag string) error {
-	condition := NewCondition(e, flag)
-	if err := UpdateStatus(c, ctx, e, *condition); err != nil {
-		return err
-	}
-	return nil
-}
 
-func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, condition metav1.Condition) error {
-	switch condition.Type {
-	case esv1alpha1.ElastAlertAvailableType:
-		e.Status.Phase = esv1alpha1.ElastAlertPhraseSucceeded
-		meta.SetStatusCondition(&e.Status.Condictions, condition)
-		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertUnAvailableType)
-	case esv1alpha1.ElastAlertUnAvailableType:
-		e.Status.Phase = esv1alpha1.ElastAlertPhraseFailed
-		meta.SetStatusCondition(&e.Status.Condictions, condition)
-		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
-	}
-	e.Status.Version = esv1alpha1.ElastAlertVersion
-	if err := c.Status().Update(ctx, e); err != nil {
-		return err
-	}
-	return nil
+func (r *ElastalertReconciler) startObservingHealth(e *esv1alpha1.Elastalert) {
+	r.Observer.Observe(e, r.Client)
 }
 
 func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
@@ -266,29 +250,4 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}
 		return deploy, nil
 	}
-}
-
-func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
-	var condition *metav1.Condition
-	switch flag {
-	case esv1alpha1.ActionSuccess:
-		condition = &metav1.Condition{
-			Type:               esv1alpha1.ElastAlertAvailableType,
-			Status:             esv1alpha1.ElastAlertAvailableStatus,
-			ObservedGeneration: e.Generation,
-			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
-			Reason:             esv1alpha1.ElastAlertAvailableReason,
-			Message:            "ElastAlert " + e.Name + " has successfully progressed.",
-		}
-	case esv1alpha1.ActionFailed:
-		condition = &metav1.Condition{
-			Type:               esv1alpha1.ElastAlertUnAvailableType,
-			Status:             esv1alpha1.ElastAlertUnAvailableStatus,
-			ObservedGeneration: e.Generation,
-			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
-			Reason:             esv1alpha1.ElastAlertUnAvailableReason,
-			Message:            "Failed to apply ElastAlert " + e.Name + " resources.",
-		}
-	}
-	return condition
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"elastalert/api/v1alpha1"
 	"github.com/bouk/monkey"
+	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -13,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
+	"time"
 )
 
 var TerminationGracePeriodSeconds int64 = 10
@@ -1182,10 +1184,13 @@ func TestWaitForStability(t *testing.T) {
 		s := scheme.Scheme
 		s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
 		t.Run(tc.name, func(t *testing.T) {
-			err := WaitForStability(tc.c, context.Background(), tc.dep)
 			if tc.want {
+				err := WaitForStability(tc.c, context.Background(), tc.dep)
 				require.NoError(t, err)
 			} else {
+				stubs := gostub.Stub(&v1alpha1.ElastAlertPollTimeout, time.Second*20)
+				defer stubs.Reset()
+				err := WaitForStability(tc.c, context.Background(), tc.dep)
 				require.Error(t, err)
 			}
 		})

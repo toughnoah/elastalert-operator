@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"elastalert/controllers/observer"
 	"flag"
 	"os"
 
@@ -57,10 +58,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	//defaults to debug level
-	//opts := zap.Options{
-	//	Development: true,
-	//}
+
 	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -85,6 +83,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("Elastalert"),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("elastalert"),
+		Observer: *observer.NewManager(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Elastalert")
 		os.Exit(1)
