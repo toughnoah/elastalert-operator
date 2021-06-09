@@ -47,7 +47,7 @@ const (
 
 	ElastAlertUnKnownStatus = "Unknown"
 
-	ElastAlertResourcesCreating = "starting"
+	ResourcesCreating = "starting"
 
 	ActionSuccess = "success"
 

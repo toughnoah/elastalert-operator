@@ -4,6 +4,7 @@ import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
 	"elastalert/controllers/podspec"
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +15,9 @@ import (
 	"time"
 )
 
-var log = ctrl.Log.WithName("observation")
+const name = "observation"
+
+var log = ctrl.Log.WithName(name)
 
 // Observer regularly check the health of elastalert deployment
 // in a thread-safe way
@@ -43,13 +46,21 @@ func NewObserver(c client.Client, elastalert types.NamespacedName, interval time
 
 // Start the observer in a separate goroutine
 func (o *Observer) Start() {
-	log.Info("Starting observer for elastalert instance.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
+	log.Info(
+		"Starting observer for elastalert instance.",
+		"namespace", o.elastalert.Namespace,
+		"elastalert", o.elastalert.Name,
+	)
 	go o.runPeriodically()
 }
 
 // Stop the observer loop
 func (o *Observer) Stop() {
-	log.Info("Stopping observer for elastalert instance.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
+	log.Info(
+		"Stopping observer for deleted elastalert instance.",
+		"namespace", o.elastalert.Namespace,
+		"elastalert", o.elastalert.Name,
+	)
 	o.stopOnce.Do(func() {
 		close(o.stopChan)
 	})
@@ -68,42 +79,52 @@ func (o *Observer) runPeriodically() {
 		}
 	}
 }
-func (o *Observer) checkDeploymentHeath() {
+func (o *Observer) checkDeploymentHeath() error {
 	ea := &esv1alpha1.Elastalert{}
 	err := o.client.Get(context.Background(), o.elastalert, ea)
 	if err != nil {
-		log.Error(err, "Failed to get elastalert instance while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		return
+		log.Error(
+			err,
+			"Failed to get elastalert instance while observing.",
+			"namespace", o.elastalert.Namespace,
+			"elastalert", o.elastalert.Name)
+		return err
 	}
 	dep := &appsv1.Deployment{}
 	err = o.client.Get(context.Background(), o.elastalert, dep)
 	if err != nil {
-		log.Error(err, "Failed to get deployment instance while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		if err = UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed); err != nil {
-			log.Error(err, "Failed to update elastalert status while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-			return
-		}
-		log.V(1).Info("Updating Elastalert resources phase to FAILED.", "Elastalert.Namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		return
+		log.Error(
+			err, "Failed to get deployment instance while observing.",
+			"namespace", o.elastalert.Namespace,
+			"elastalert", o.elastalert.Name,
+		)
+		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed)
 	}
 	if dep.Status.AvailableReplicas != *dep.Spec.Replicas {
-		log.Error(err, "AvailableReplicas of deployment instance is 0 .", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		if err = UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed); err != nil {
-			log.Error(err, "Failed to update elastalert failed status while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-			return
-		}
-		log.V(1).Info("Updating Elastalert resources phase to FAILED.", "Elastalert.Namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		return
+		log.V(1).Info(
+			"Updating Elastalert resources phase to FAILED.",
+			"Elastalert.Namespace", o.elastalert.Namespace,
+			"elastalert", o.elastalert.Name,
+		)
+		log.Error(
+			err, "AvailableReplicas of deployment instance is 0 .",
+			"namespace", o.elastalert.Namespace,
+			"elastalert", o.elastalert.Name,
+		)
+
+		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed)
 	}
-	if dep.Status.AvailableReplicas == *dep.Spec.Replicas && ea.Status.Phase == esv1alpha1.ElastAlertPhraseFailed {
-		log.Info("Deployment has been stabilized again.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		if err = UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionSuccess); err != nil {
-			log.Error(err, "Failed to update elastalert success status while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-			return
-		}
-		log.V(1).Info("Updating Elastalert resources phase to SUCCESS.", "Elastalert.Namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
-		return
+	if dep.Status.AvailableReplicas == *dep.Spec.Replicas {
+		log.V(1).Info(
+			"Updating Elastalert resources phase to SUCCESS.",
+			"Elastalert.Namespace", o.elastalert.Namespace,
+			"elastalert", o.elastalert.Name,
+		)
+		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionSuccess)
+
 	}
+
+	return nil
 }
 
 type Manager struct {
@@ -162,28 +183,52 @@ func (m *Manager) StopObserving(key types.NamespacedName) {
 
 func UpdateElastalertStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, flag string) error {
 	condition := NewCondition(e, flag)
-	if err := UpdateStatus(c, ctx, e, *condition); err != nil {
+	if err := UpdateStatus(c, ctx, e, condition); err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, condition metav1.Condition) error {
+func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, condition *metav1.Condition) error {
 	patch := client.MergeFrom(e.DeepCopy())
-	switch condition.Type {
-	case esv1alpha1.ElastAlertAvailableType:
-		e.Status.Phase = esv1alpha1.ElastAlertPhraseSucceeded
-		meta.SetStatusCondition(&e.Status.Condictions, condition)
-		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertUnAvailableType)
-	case esv1alpha1.ElastAlertUnAvailableType:
-		e.Status.Phase = esv1alpha1.ElastAlertPhraseFailed
-		meta.SetStatusCondition(&e.Status.Condictions, condition)
-		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
-	}
 	e.Status.Version = esv1alpha1.ElastAlertVersion
-	if err := c.Status().Patch(ctx, e, patch); err != nil {
-		return err
+
+	if condition != nil {
+		switch condition.Type {
+		case esv1alpha1.ElastAlertAvailableType:
+			e.Status.Phase = esv1alpha1.ElastAlertPhraseSucceeded
+			meta.SetStatusCondition(&e.Status.Condictions, *condition)
+			meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertUnAvailableType)
+		case esv1alpha1.ElastAlertUnAvailableType:
+			e.Status.Phase = esv1alpha1.ElastAlertPhraseFailed
+			meta.SetStatusCondition(&e.Status.Condictions, *condition)
+			meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
+		}
+		if err := c.Status().Patch(ctx, e, patch); err != nil {
+			log.Error(
+				err, "Failed to update elastalert failed status",
+				"Elastalert.Name", e.Name,
+				"Status", e.Status.Phase,
+			)
+			return err
+		}
 	}
+	if len(e.Status.Condictions) == 0 && condition == nil || e.Status.Condictions[0].ObservedGeneration != e.Generation && condition == nil {
+		e.Status.Phase = esv1alpha1.ElastAlertInitializing
+		if err := c.Status().Patch(ctx, e, patch); err != nil {
+			log.Error(
+				err, "Failed to update elastalert failed status",
+				"Elastalert.Name", e.Name,
+				"Status", e.Status.Phase,
+			)
+			return err
+		}
+	}
+	log.V(1).Info(
+		"Update Elastalert resources status success.",
+		"Elastalert.Namespace", e.Name,
+		"Status", e.Status.Phase,
+	)
 	return nil
 }
 
@@ -197,7 +242,7 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 			ObservedGeneration: e.Generation,
 			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
 			Reason:             esv1alpha1.ElastAlertAvailableReason,
-			Message:            "ElastAlert " + e.Name + " has successfully progressed.",
+			Message:            fmt.Sprintf("ElastAlert %s has successfully progressed.", e.Name),
 		}
 	case esv1alpha1.ActionFailed:
 		condition = &metav1.Condition{
@@ -206,8 +251,10 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 			ObservedGeneration: e.Generation,
 			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
 			Reason:             esv1alpha1.ElastAlertUnAvailableReason,
-			Message:            "Failed to apply ElastAlert " + e.Name + " resources.",
+			Message:            fmt.Sprintf("Failed to apply ElastAlert %s resources.", e.Name),
 		}
+	case esv1alpha1.ResourcesCreating:
+		return nil
 	}
 	return condition
 }

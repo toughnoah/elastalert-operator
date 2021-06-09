@@ -80,7 +80,6 @@ func main() {
 
 	if err = (&controllers.ElastalertReconciler{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Elastalert"),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("elastalert"),
 		Observer: *observer.NewManager(),
@@ -92,7 +91,6 @@ func main() {
 
 	if err = (&controllers.DeploymentReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Deployment"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Deployment")

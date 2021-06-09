@@ -1,20 +1,15 @@
 package podspec
 
 import (
-	"context"
 	"elastalert/api/v1alpha1"
 	"github.com/bouk/monkey"
-	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
-	"time"
 )
 
 var TerminationGracePeriodSeconds int64 = 10
@@ -1112,88 +1107,4 @@ func TestGenerateNewDeployment(t *testing.T) {
 			require.Equal(t, tc.want, *have)
 		})
 	}
-}
-
-func TestWaitForStability(t *testing.T) {
-	var replicas int32 = 1
-	testCases := []struct {
-		name string
-		c    client.Client
-		dep  appsv1.Deployment
-		want bool
-	}{
-		{
-			name: "test success",
-			c: fake.NewClientBuilder().WithRuntimeObjects(
-				&appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "test-elastalert",
-					},
-					Spec: appsv1.DeploymentSpec{
-						Replicas: &replicas,
-					},
-					Status: appsv1.DeploymentStatus{
-						AvailableReplicas: replicas,
-					},
-				}).Build(),
-			dep: appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test-elastalert",
-				},
-			},
-			want: true,
-		},
-		{
-			name: "test failed",
-			c: fake.NewClientBuilder().WithRuntimeObjects(
-				&appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "test-elastalert",
-					},
-					Spec: appsv1.DeploymentSpec{
-						Replicas: &replicas,
-					},
-					Status: appsv1.DeploymentStatus{
-						AvailableReplicas: 0,
-					},
-				}).Build(),
-			dep: appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test-elastalert",
-				},
-			},
-			want: false,
-		},
-		{
-			name: "test no object failed",
-			c:    fake.NewClientBuilder().Build(),
-			dep: appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test-elastalert",
-				},
-			},
-			want: false,
-		},
-	}
-	for _, tc := range testCases {
-		s := scheme.Scheme
-		s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.want {
-				err := WaitForStability(tc.c, context.Background(), tc.dep)
-				require.NoError(t, err)
-			} else {
-				stubs := gostub.Stub(&v1alpha1.ElastAlertPollTimeout, time.Second*20)
-				defer stubs.Reset()
-				err := WaitForStability(tc.c, context.Background(), tc.dep)
-				require.Error(t, err)
-			}
-		})
-	}
-
 }

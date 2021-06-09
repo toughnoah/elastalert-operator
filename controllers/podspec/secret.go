@@ -11,6 +11,11 @@ import (
 func GenerateCertSecret(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert) (*corev1.Secret, error) {
 	se := BuildCertSecret(e)
 	if err := ctrl.SetControllerReference(e, se, Scheme); err != nil {
+		log.Error(
+			err,
+			"Failed to generate Secret",
+			"Elastalert.Namespace", e.Namespace,
+		)
 		return nil, err
 	}
 	return se, nil
