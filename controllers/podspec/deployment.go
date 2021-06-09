@@ -74,7 +74,7 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 				log.V(1).Info("Deployment doesn't exist yet.", "deployment", dep.Name)
 				return false, nil
 			}
-			return false, err
+			return false, nil
 		}
 		seen = true
 		if d.Status.AvailableReplicas != *d.Spec.Replicas {

@@ -169,6 +169,7 @@ func UpdateElastalertStatus(c client.Client, ctx context.Context, e *esv1alpha1.
 }
 
 func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert, condition metav1.Condition) error {
+	patch := client.MergeFrom(e.DeepCopy())
 	switch condition.Type {
 	case esv1alpha1.ElastAlertAvailableType:
 		e.Status.Phase = esv1alpha1.ElastAlertPhraseSucceeded
@@ -180,7 +181,7 @@ func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert
 		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	}
 	e.Status.Version = esv1alpha1.ElastAlertVersion
-	if err := c.Status().Update(ctx, e); err != nil {
+	if err := c.Status().Patch(ctx, e, patch); err != nil {
 		return err
 	}
 	return nil
@@ -206,15 +207,6 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
 			Reason:             esv1alpha1.ElastAlertUnAvailableReason,
 			Message:            "Failed to apply ElastAlert " + e.Name + " resources.",
-		}
-	case esv1alpha1.ElastAlertResourcesCreating:
-		condition = &metav1.Condition{
-			Type:               esv1alpha1.ElastAlertResourcesCreating,
-			Status:             esv1alpha1.ElastAlertUnKnownStatus,
-			ObservedGeneration: e.Generation,
-			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
-			Reason:             esv1alpha1.ElastAlertUnKnowReason,
-			Message:            "Resources " + e.Name + " creating.",
 		}
 	}
 	return condition

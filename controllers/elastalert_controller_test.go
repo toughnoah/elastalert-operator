@@ -373,7 +373,7 @@ func TestReconcile(t *testing.T) {
 								Type:               "Progressing",
 								Status:             "True",
 								ObservedGeneration: int64(1),
-								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 								Reason:             "NewElastAlertAvailable",
 								Message:            "ElastAlert my-esa has successfully progressed.",
 							},
@@ -411,7 +411,7 @@ func TestReconcile(t *testing.T) {
 								Type:               "Progressing",
 								Status:             "True",
 								ObservedGeneration: int64(1),
-								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 								Reason:             "NewElastAlertAvailable",
 								Message:            "ElastAlert my-esa has successfully progressed.",
 							},
@@ -466,7 +466,7 @@ func TestReconcile(t *testing.T) {
 								Type:               "Progressing",
 								Status:             "True",
 								ObservedGeneration: int64(1),
-								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 								Reason:             "NewElastAlertAvailable",
 								Message:            "ElastAlert my-esa has successfully progressed.",
 							},
@@ -652,7 +652,7 @@ func TestReconcileWaitForStabilityFailed(t *testing.T) {
 								Type:               "Progressing",
 								Status:             "True",
 								ObservedGeneration: int64(1),
-								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 								Reason:             "NewElastAlertAvailable",
 								Message:            "ElastAlert my-esa has successfully progressed.",
 							},
@@ -817,7 +817,7 @@ func TestUpdateStatus(t *testing.T) {
 			cond: metav1.Condition{
 				Type:               v1alpha1.ElastAlertAvailableType,
 				Status:             v1alpha1.ElastAlertAvailableStatus,
-				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 				ObservedGeneration: 1,
 				Reason:             v1alpha1.ElastAlertAvailableReason,
 				Message:            "ElastAlert my-esa has successfully progressed.",
@@ -839,7 +839,7 @@ func TestUpdateStatus(t *testing.T) {
 							Type:               "Progressing",
 							Status:             "True",
 							ObservedGeneration: int64(1),
-							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 							Reason:             "NewElastAlertAvailable",
 							Message:            "ElastAlert my-esa has successfully progressed.",
 						},
@@ -859,7 +859,7 @@ func TestUpdateStatus(t *testing.T) {
 			cond: metav1.Condition{
 				Type:               v1alpha1.ElastAlertUnAvailableType,
 				Status:             v1alpha1.ElastAlertUnAvailableStatus,
-				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 				ObservedGeneration: 1,
 				Reason:             v1alpha1.ElastAlertUnAvailableReason,
 				Message:            "Failed to apply ElastAlert my-esa resources.",
@@ -881,7 +881,7 @@ func TestUpdateStatus(t *testing.T) {
 							Type:               "Stopped",
 							Status:             "False",
 							ObservedGeneration: int64(1),
-							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 							Reason:             "ElastAlertUnAvailable",
 							Message:            "Failed to apply ElastAlert my-esa resources.",
 						},
@@ -903,7 +903,7 @@ func TestUpdateStatus(t *testing.T) {
 								Type:               "Progressing",
 								Status:             "True",
 								ObservedGeneration: int64(1),
-								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+								LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 								Reason:             "NewElastAlertAvailable",
 								Message:            "ElastAlert my-esa has successfully progressed.",
 							},
@@ -913,7 +913,7 @@ func TestUpdateStatus(t *testing.T) {
 			cond: metav1.Condition{
 				Type:               v1alpha1.ElastAlertUnAvailableType,
 				Status:             v1alpha1.ElastAlertUnAvailableStatus,
-				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 				ObservedGeneration: 1,
 				Reason:             v1alpha1.ElastAlertUnAvailableReason,
 				Message:            "Failed to apply ElastAlert my-esa resources.",
@@ -935,7 +935,7 @@ func TestUpdateStatus(t *testing.T) {
 							Type:               "Stopped",
 							Status:             "False",
 							ObservedGeneration: int64(1),
-							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 							Reason:             "ElastAlertUnAvailable",
 							Message:            "Failed to apply ElastAlert my-esa resources.",
 						},
@@ -1036,7 +1036,7 @@ func TestNewCondition(t *testing.T) {
 				Type:               "Stopped",
 				Status:             "False",
 				ObservedGeneration: int64(1),
-				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 				Reason:             "ElastAlertUnAvailable",
 				Message:            "Failed to apply ElastAlert my-esa resources.",
 			},
@@ -1055,7 +1055,7 @@ func TestNewCondition(t *testing.T) {
 				Type:               "Progressing",
 				Status:             "True",
 				ObservedGeneration: int64(1),
-				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+				LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 				Reason:             "NewElastAlertAvailable",
 				Message:            "ElastAlert my-esa has successfully progressed.",
 			},
@@ -1078,7 +1078,7 @@ func TestNewCondition(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
-				return time.Unix(0, 1233810057012345600)
+				return time.Unix(0, 1233810057000000000)
 			})
 			have := ob.NewCondition(&tc.elastalert, tc.flag)
 			require.Equal(t, tc.want, *have)
@@ -1123,7 +1123,7 @@ func TestUpdateElastalertStatus(t *testing.T) {
 							Type:               "Progressing",
 							Status:             "True",
 							ObservedGeneration: int64(1),
-							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 							Reason:             "NewElastAlertAvailable",
 							Message:            "ElastAlert my-esa has successfully progressed.",
 						},
@@ -1159,7 +1159,7 @@ func TestUpdateElastalertStatus(t *testing.T) {
 							Type:               "Stopped",
 							Status:             "False",
 							ObservedGeneration: int64(1),
-							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057012345600)),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
 							Reason:             "ElastAlertUnAvailable",
 							Message:            "Failed to apply ElastAlert my-esa resources.",
 						},
@@ -1210,7 +1210,7 @@ func TestUpdateElastalertStatus(t *testing.T) {
 			}, &esa)
 
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
-				return time.Unix(0, 1233810057012345600)
+				return time.Unix(0, 1233810057000000000)
 			})
 			err = ob.UpdateElastalertStatus(r.Client, context.Background(), &esa, tc.flag)
 			require.NoError(t, err)
@@ -1268,10 +1268,8 @@ func TestReconcileApplyDeploymentFailedWithUpdateStatus(t *testing.T) {
 					ResourceVersion: "1000",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
-						"rules_folder": "/etc/elastalert/rules/..data/",
-					}),
-					Alert: v1alpha1.NewFreeForm(map[string]interface{}{}),
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{}),
+					Alert:         v1alpha1.NewFreeForm(map[string]interface{}{}),
 				},
 				Status: v1alpha1.ElastalertStatus{
 					Version: "v1.0",
@@ -1307,7 +1305,7 @@ func TestReconcileApplyDeploymentFailedWithUpdateStatus(t *testing.T) {
 				return nil, errors.New("test update failed")
 			})
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
-				return time.Unix(0, 1233810057012345600)
+				return time.Unix(0, 1233810057000000000)
 			})
 			_, err := r.Reconcile(context.Background(), req)
 			assert.Error(t, err)
@@ -1387,7 +1385,7 @@ func TestReconcileApplySecretFailedWithUpdateStatus(t *testing.T) {
 				return nil, errors.New("test update failed")
 			})
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
-				return time.Unix(0, 1233810057012345600)
+				return time.Unix(0, 1233810057000000000)
 			})
 			_, err := r.Reconcile(context.Background(), req)
 			assert.Error(t, err)
@@ -1429,10 +1427,8 @@ func TestReconcileApplyConfigMapsFailedWithUpdateStatus(t *testing.T) {
 					ResourceVersion: "1000",
 				},
 				Spec: v1alpha1.ElastalertSpec{
-					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{
-						"rules_folder": "/etc/elastalert/rules/..data/",
-					}),
-					Alert: v1alpha1.NewFreeForm(map[string]interface{}{}),
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{}),
+					Alert:         v1alpha1.NewFreeForm(map[string]interface{}{}),
 				},
 				Status: v1alpha1.ElastalertStatus{
 					Version: "v1.0",
@@ -1468,7 +1464,7 @@ func TestReconcileApplyConfigMapsFailedWithUpdateStatus(t *testing.T) {
 				return errors.New("test update failed")
 			})
 			monkey.Patch(podspec.GetUtcTime, func() time.Time {
-				return time.Unix(0, 1233810057012345600)
+				return time.Unix(0, 1233810057000000000)
 			})
 			_, err := r.Reconcile(context.Background(), req)
 			assert.Error(t, err)

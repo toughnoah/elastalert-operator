@@ -186,7 +186,6 @@ var _ = Describe("Elastalert Controller", func() {
 			By("Start waiting deployment to be stable.")
 			dep := &appsv1.Deployment{}
 			Eventually(func() int {
-
 				_ = k8sClient.Get(context.Background(), Key, dep)
 				return int(dep.Status.AvailableReplicas)
 			}, timeout*4, interval).Should(Equal(1))
@@ -223,14 +222,9 @@ var _ = Describe("Elastalert Controller", func() {
 				return compare(configConfigMap.Data["config.yaml"], ConfigSample)
 			}, timeout, interval).Should(Equal(true))
 
-		})
-
-		It("Test delete deployment", func() {
-			By("Start to delete deployment")
-			elastalert := newSampleElastalert()
-			Expect(k8sClient.Create(context.Background(), elastalert)).Should(Succeed())
+			By("Start to test deployment reconcile")
 			Eventually(func() error {
-				dep := &appsv1.Deployment{
+				dep = &appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      Key.Name,
 						Namespace: Key.Namespace,
@@ -245,6 +239,7 @@ var _ = Describe("Elastalert Controller", func() {
 				_ = k8sClient.Get(context.Background(), Key, dep)
 				return int(dep.Status.AvailableReplicas)
 			}, timeout*4, interval).Should(Equal(1))
+
 		})
 	})
 })

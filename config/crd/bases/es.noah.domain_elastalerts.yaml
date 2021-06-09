@@ -65,8 +65,7 @@ spec:
                   the hierarchy into a key/value map where the hierarchy is converted
                   to '.' separated items in the key.
                 type: object
-
-
+                x-kubernetes-preserve-unknown-fields: true
               podTemplate:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
