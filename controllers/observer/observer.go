@@ -178,8 +178,6 @@ func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert
 		e.Status.Phase = esv1alpha1.ElastAlertPhraseFailed
 		meta.SetStatusCondition(&e.Status.Condictions, condition)
 		meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
-	case esv1alpha1.ElastAlertResourcesCreating:
-		e.Status.Phase = esv1alpha1.ElastAlertInitializing
 	}
 	e.Status.Version = esv1alpha1.ElastAlertVersion
 	if err := c.Status().Update(ctx, e); err != nil {
@@ -211,7 +209,12 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 		}
 	case esv1alpha1.ElastAlertResourcesCreating:
 		condition = &metav1.Condition{
-			Type: esv1alpha1.ElastAlertResourcesCreating,
+			Type:               esv1alpha1.ElastAlertResourcesCreating,
+			Status:             esv1alpha1.ElastAlertUnKnownStatus,
+			ObservedGeneration: e.Generation,
+			LastTransitionTime: metav1.NewTime(podspec.GetUtcTime()),
+			Reason:             esv1alpha1.ElastAlertUnKnowReason,
+			Message:            "Resources " + e.Name + " creating.",
 		}
 	}
 	return condition

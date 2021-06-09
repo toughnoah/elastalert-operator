@@ -66,10 +66,6 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	}
 	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
-		if err = ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ElastAlertResourcesCreating); err != nil {
-			log.Error(err, "Failed to update elastalert initializing status")
-			return ctrl.Result{}, err
-		}
 		if err = applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
 			log.Error(err, "Failed to apply Secret", "Secret.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply Secret.")
@@ -104,7 +100,7 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		}
 		log.V(1).Info("Apply deployment successfully", "Deployment.Namespace", req.Namespace)
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply deployment successfully.")
-		if err = podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
+		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
 			log.Error(err, "Deployment stabilized failed ", "Deployment.Namespace", req.Namespace)
 			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to stabilize deployment.")
 			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
