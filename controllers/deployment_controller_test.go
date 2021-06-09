@@ -15,12 +15,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"testing"
+	"time"
 )
 
 func TestReCreateDeployment(t *testing.T) {
@@ -364,7 +366,7 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 	}
 }
 
-func TestDeploymentReconcileFailedWithNoMock(t *testing.T) {
+func TestDeploymentReconcileFailedWaitForStability(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
 	testCases := []struct {
@@ -395,6 +397,7 @@ func TestDeploymentReconcileFailedWithNoMock(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
+			defer monkey.Unpatch(wait.Poll)
 			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &DeploymentReconciler{
 				Client: tc.c,
@@ -404,13 +407,16 @@ func TestDeploymentReconcileFailedWithNoMock(t *testing.T) {
 			ctx := context.Background()
 			nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
 			req := reconcile.Request{NamespacedName: nsn}
+			monkey.Patch(wait.Poll, func(interval, timeout time.Duration, condition wait.ConditionFunc) error {
+				return errors.New("test WaitForStability failed")
+			})
 			_, err := r.Reconcile(ctx, req)
 			assert.Error(t, err)
 		})
 	}
 }
 
-func TestDeploymentReconciler_SetupWithManager(t *testing.T) {
+func TestDeploymentReconcile_SetupWithManager(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(appsv1.SchemeGroupVersion)
 	var log = ctrl.Log.WithName("test").WithName("Deployment")
