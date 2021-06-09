@@ -58,7 +58,7 @@ func BuildDeployment(elastalert v1alpha1.Elastalert) *appsv1.Deployment {
 func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
 	// the images, subsequent runs should take only a few seconds
 	seen := false
-	res := wait.Poll(v1alpha1.ElastAlertPollInterval, v1alpha1.ElastAlertPollTimeout, func() (done bool, err error) {
+	return wait.Poll(v1alpha1.ElastAlertPollInterval, v1alpha1.ElastAlertPollTimeout, func() (done bool, err error) {
 		d := &appsv1.Deployment{}
 		if err := c.Get(ctx, types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, d); err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -85,5 +85,4 @@ func WaitForStability(c client.Client, ctx context.Context, dep appsv1.Deploymen
 		//"Deployment has stabilized"
 		return true, nil
 	})
-	return res
 }

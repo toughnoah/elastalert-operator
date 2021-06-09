@@ -39,9 +39,13 @@ const (
 
 	ElastAlertUnAvailableReason = "ElastAlertUnAvailable"
 
+	ElastAlertUnKnowReason = "ResourcesCreating"
+
 	ElastAlertUnAvailableType = "Stopped"
 
 	ElastAlertUnAvailableStatus = "False"
+
+	ElastAlertUnKnownStatus = "Unknown"
 
 	ElastAlertResourcesCreating = "starting"
 
@@ -65,7 +69,7 @@ const (
 )
 
 // for gostub, it has to be a var.
-var ElastAlertPollTimeout = time.Minute * 3
+var ElastAlertPollTimeout = time.Minute * 2
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.

@@ -65,7 +65,8 @@ spec:
                   the hierarchy into a key/value map where the hierarchy is converted
                   to '.' separated items in the key.
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+
+
               podTemplate:
                 description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file'
@@ -73,6 +74,7 @@ spec:
                   metadata:
                     description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   spec:
                     description: 'Specification of the desired behavior of the pod.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
