@@ -525,7 +525,6 @@ var _ = Describe("Test Observer", func() {
 				ob := NewObserver(tc.client, ea, time.Second*2)
 				ob.Start()
 				defer ob.Stop()
-				ob.checkDeploymentHeath()
 				Eventually(func() bool {
 					elastalert := &v1alpha1.Elastalert{}
 					_ = tc.client.Get(context.Background(), ea, elastalert)
