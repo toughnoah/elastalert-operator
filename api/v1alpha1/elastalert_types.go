@@ -90,7 +90,7 @@ type ElastalertSpec struct {
 type ElastalertStatus struct {
 	Version     string             `json:"version,omitempty"`
 	Phase       string             `json:"phase,omitempty"`
-	Condictions []metav1.Condition `json:"conditions"`
+	Condictions []metav1.Condition `json:"conditions,omitempty"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }

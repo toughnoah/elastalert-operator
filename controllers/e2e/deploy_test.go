@@ -147,7 +147,7 @@ var _ = Describe("Elastalert Controller", func() {
 			Eventually(func() string {
 				_ = k8sClient.Get(context.Background(), Key, elastalert)
 				return elastalert.Status.Phase
-			}, timeout, interval).Should(Equal("FAILED"))
+			}, timeout, interval).Should(Equal("INITIALIZING"))
 
 			By("Start waiting for failed status")
 
