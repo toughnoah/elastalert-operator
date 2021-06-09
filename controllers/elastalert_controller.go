@@ -119,13 +119,13 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			log.Error(statusError, "Failed to update elastalert success status")
 			return ctrl.Result{}, statusError
 		}
-		r.startObservingHealth(elastalert)
+
 		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "reconcile Elastalert resources successfully.")
 		log.V(1).Info("Reconcile Elastalert resources successfully.", "Elastalert.Namespace", req.Namespace)
 		return ctrl.Result{}, nil
 
 	}
-
+	r.startObservingHealth(elastalert)
 	log.V(1).Info("condition.ObservedGeneration and elastalert.Generation matched. Skipping reconciliation", "Elastalert.Namespace", req.Namespace)
 	return ctrl.Result{}, nil
 }
