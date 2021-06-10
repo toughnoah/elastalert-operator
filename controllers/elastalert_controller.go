@@ -121,22 +121,12 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 	stringCert := e.Spec.Cert
 	err := podspec.PatchConfigSettings(e, stringCert)
 	if err != nil {
-		log.Error(
-			err,
-			"Failed to patch config.yaml configmaps",
-			"Elastalert.Namespace", e.Namespace,
-			"Configmaps.Namespace", e.Namespace,
-		)
+		log.Error(err, "Failed to patch config.yaml configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 		return err
 	}
 	err = podspec.PatchAlertSettings(e)
 	if err != nil {
-		log.Error(
-			err,
-			"Failed to patch alert for rules configmaps",
-			"Elastalert.Namespace", e.Namespace,
-			"Configmaps.Namespace", e.Namespace,
-		)
+		log.Error(err, "Failed to patch alert for rules configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 		return err
 	}
 	list := &corev1.ConfigMapList{}
@@ -159,22 +149,12 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		for _, cm := range mupdate {
 			if _, ok := mexist[cm.Name]; ok {
 				if err = c.Update(ctx, &cm); err != nil {
-					log.Error(
-						err,
-						"Failed to update configmaps",
-						"Elastalert.Namespace", e.Namespace,
-						"Configmaps.Namespace", e.Namespace,
-					)
+					log.Error(err, "Failed to update configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 					return err
 				}
 			} else {
 				if err = c.Create(ctx, &cm); err != nil {
-					log.Error(
-						err,
-						"Failed to create configmaps",
-						"Elastalert.Namespace", e.Namespace,
-						"Configmaps.Namespace", e.Namespace,
-					)
+					log.Error(err, "Failed to create configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 					return err
 				}
 			}
@@ -183,12 +163,7 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 	} else {
 		for _, cm := range mupdate {
 			if err = c.Create(ctx, &cm); err != nil {
-				log.Error(
-					err,
-					"Failed to create configmaps",
-					"Elastalert.Namespace", e.Namespace,
-					"Configmaps.Namespace", e.Namespace,
-				)
+				log.Error(err, "Failed to create configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 				return err
 			}
 		}
@@ -215,22 +190,13 @@ func applySecret(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e
 		secret); err != nil {
 		if k8serrors.IsNotFound(err) {
 			if err = c.Create(ctx, newSecret); err != nil {
-				log.Error(
-					err,
-					"Failed to create Secret",
-					"Elastalert.Namespace", e.Namespace,
-					"Secret.Name", secret.Name,
-				)
+				log.Error(err, "Failed to create Secret", "Elastalert.Namespace", e.Namespace, "Secret.Name", secret.Name)
 				return err
 			}
 		}
 	} else {
 		if err = c.Update(ctx, newSecret); err != nil {
-			log.Error(
-				err,
-				"Failed to update Secret",
-				"Elastalert.Namespace", e.Namespace,
-			)
+			log.Error(err, "Failed to update Secret", "Elastalert.Namespace", e.Namespace)
 			return err
 		}
 	}
@@ -258,10 +224,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 			err = c.Create(ctx, deploy)
 			if err != nil {
 				log.Error(
-					err,
-					"Failed to create Deployment",
-					"Elastalert.Name", e.Name,
-					"Deployment.Name", e.Name,
+					err, "Failed to create Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name,
 				)
 				return nil, err
 			}
@@ -275,12 +238,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}
 		err = c.Update(ctx, deploy)
 		if err != nil {
-			log.Error(
-				err,
-				"Failed to update Deployment",
-				"Elastalert.Name", e.Name,
-				"Deployment.Name", e.Name,
-			)
+			log.Error(err, "Failed to update Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 			return nil, err
 		}
 		log.V(1).Info(

@@ -131,7 +131,7 @@ var _ = Describe("Elastalert Controller", func() {
 
 			elastalert = &v1alpha1.Elastalert{}
 
-			By("Start check for initializing status")
+			By("Start checking for initializing status")
 
 			Eventually(func() string {
 				_ = k8sClient.Get(context.Background(), Key, elastalert)
@@ -172,7 +172,7 @@ var _ = Describe("Elastalert Controller", func() {
 			}
 			Expect(k8sClient.Update(context.Background(), elastalert)).To(Succeed())
 
-			By("Start check for initializing status again")
+			By("Start checking for initializing status again")
 
 			Eventually(func() string {
 				_ = k8sClient.Get(context.Background(), Key, elastalert)

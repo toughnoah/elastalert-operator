@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"testing"
+	"time"
 )
 
 func TestGenerateCertSecret(t *testing.T) {
@@ -54,4 +55,11 @@ func TestGenerateCertSecret(t *testing.T) {
 			require.Equal(t, tc.want, *have)
 		})
 	}
+}
+
+func TestGetUtcTime(t *testing.T) {
+	require.NotEqual(t, GetUtcTime(), time.Time{})
+}
+func TestGetUtcTimeString(t *testing.T) {
+	require.NotEqual(t, GetUtcTimeString(), "2006-01-02T15:04:05+08:00")
 }
