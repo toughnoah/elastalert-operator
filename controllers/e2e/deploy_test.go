@@ -10,10 +10,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
@@ -94,16 +92,6 @@ var _ = Describe("Elastalert Controller", func() {
 			},
 		}
 		_ = k8sClient.Delete(context.Background(), ea)
-		By("Start waiting for grace period")
-		// Add any teardown steps that needs to be executed after each test
-		Eventually(func() int {
-			po := &v1.PodList{}
-			labelSelector, _ := labels.Parse("app=elastalert")
-			opt := &client.ListOptions{
-				LabelSelector: labelSelector}
-			_ = k8sClient.List(context.Background(), po, opt)
-			return len(po.Items)
-		}, timeout*10, interval).Should(Equal(0))
 	})
 
 	Context("Deploy Elastalert", func() {
@@ -143,6 +131,13 @@ var _ = Describe("Elastalert Controller", func() {
 
 			elastalert = &v1alpha1.Elastalert{}
 
+			By("Start check for initializing status")
+
+			Eventually(func() string {
+				_ = k8sClient.Get(context.Background(), Key, elastalert)
+				return elastalert.Status.Phase
+			}, timeout*8, interval).Should(Equal("INITIALIZING"))
+
 			By("Start waiting for failed status")
 
 			Eventually(func() string {
@@ -176,6 +171,13 @@ var _ = Describe("Elastalert Controller", func() {
 				v1alpha1.NewFreeForm(RuleSample2),
 			}
 			Expect(k8sClient.Update(context.Background(), elastalert)).To(Succeed())
+
+			By("Start check for initializing status again")
+
+			Eventually(func() string {
+				_ = k8sClient.Get(context.Background(), Key, elastalert)
+				return elastalert.Status.Phase
+			}, timeout*8, interval).Should(Equal("INITIALIZING"))
 
 			By("Check RUNNING status")
 			Eventually(func() string {

@@ -1287,7 +1287,7 @@ func TestReconcileApplyConfigMapsFailedWithUpdateStatus(t *testing.T) {
 	}{
 
 		{
-			desc: "test elastalert apply deployment failed with update configmaps status",
+			desc: "test elastalert apply configmaps failed while patch alert config.",
 			c: fake.NewClientBuilder().WithRuntimeObjects(
 				&v1alpha1.Elastalert{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1354,6 +1354,83 @@ func TestReconcileApplyConfigMapsFailedWithUpdateStatus(t *testing.T) {
 	}
 }
 
+func TestReconcileApplyConfigMapsPatchFailedWithUpdateStatus(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	testCases := []struct {
+		desc string
+		c    client.Client
+		want v1alpha1.Elastalert
+	}{
+
+		{
+			desc: "test elastalert apply configmaps failed while patch config settings.",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "esa1",
+						Name:      "my-esa",
+					},
+				},
+			).Build(),
+			want: v1alpha1.Elastalert{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Elastalert",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:       "esa1",
+					Name:            "my-esa",
+					ResourceVersion: "1001",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{}),
+					Alert:         v1alpha1.NewFreeForm(map[string]interface{}{}),
+				},
+				Status: v1alpha1.ElastalertStatus{
+					Version: "v1.0",
+					Phase:   "FAILED",
+					Condictions: []metav1.Condition{
+						{
+							Type:               "Stopped",
+							Status:             "False",
+							ObservedGeneration: int64(0),
+							LastTransitionTime: metav1.NewTime(time.Unix(0, 1233810057000000000)),
+							Reason:             "ElastAlertUnAvailable",
+							Message:            "Failed to apply ElastAlert my-esa resources.",
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		defer monkey.Unpatch(podspec.PatchConfigSettings)
+		t.Run(tc.desc, func(t *testing.T) {
+			r := &ElastalertReconciler{
+				Client:   tc.c,
+				Scheme:   s,
+				Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
+			}
+			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
+			req := reconcile.Request{NamespacedName: nsn}
+
+			monkey.Patch(podspec.PatchConfigSettings, func(e *v1alpha1.Elastalert, cert string) error {
+				return errors.New("test update failed")
+			})
+			monkey.Patch(podspec.GetUtcTime, func() time.Time {
+				return time.Unix(0, 1233810057000000000)
+			})
+			_, err := r.Reconcile(context.Background(), req)
+			assert.Error(t, err)
+			ea := v1alpha1.Elastalert{}
+			err = r.Client.Get(context.Background(), nsn, &ea)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want, ea)
+		})
+	}
+}
+
 func TestReconcileRuntimeFailedWithUpdateStatus(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
@@ -1403,6 +1480,69 @@ func TestReconcileRuntimeFailedWithUpdateStatus(t *testing.T) {
 
 			monkey.Patch(podspec.GenerateCertSecret, func(Scheme *runtime.Scheme, e *v1alpha1.Elastalert) (*corev1.Secret, error) {
 				return nil, errors.New("test update failed")
+			})
+			monkey.Patch(ob.UpdateStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, condition *metav1.Condition) error {
+				return errors.New("test update failed")
+			})
+			_, err := r.Reconcile(context.Background(), req)
+			assert.Error(t, err)
+			ea := v1alpha1.Elastalert{}
+			err = r.Client.Get(context.Background(), nsn, &ea)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.want, ea)
+		})
+	}
+}
+
+func TestReconcileRuntimeClientRequestFailedWithUpdateStatus(t *testing.T) {
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	testCases := []struct {
+		desc string
+		c    client.Client
+		want v1alpha1.Elastalert
+	}{
+
+		{
+			desc: "test elastalert runtime client request failed with update secret status",
+			c: fake.NewClientBuilder().WithRuntimeObjects(
+				&v1alpha1.Elastalert{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "esa1",
+						Name:      "my-esa",
+					},
+				},
+			).Build(),
+			want: v1alpha1.Elastalert{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Elastalert",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:       "esa1",
+					Name:            "my-esa",
+					ResourceVersion: "999",
+				},
+				Spec: v1alpha1.ElastalertSpec{
+					ConfigSetting: v1alpha1.NewFreeForm(map[string]interface{}{}),
+					Alert:         v1alpha1.NewFreeForm(map[string]interface{}{}),
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+
+		t.Run(tc.desc, func(t *testing.T) {
+			r := &ElastalertReconciler{
+				Client:   tc.c,
+				Scheme:   s,
+				Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
+			}
+			nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
+			req := reconcile.Request{NamespacedName: nsn}
+			defer monkey.Unpatch(tc.c.Create)
+			monkey.Patch(tc.c.Create, func(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+				return errors.New("test update failed")
 			})
 			monkey.Patch(ob.UpdateStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, condition *metav1.Condition) error {
 				return errors.New("test update failed")
