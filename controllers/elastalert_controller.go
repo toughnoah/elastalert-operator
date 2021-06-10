@@ -69,29 +69,29 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 			return ctrl.Result{}, statusError
 		}
 		if err = applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
-			r.emitK8sEvent(elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply Secret.")
+			ob.EmitK8sEvent(r.Recorder, elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply Secret.")
 			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
 				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
-		r.emitK8sEvent(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply cert secret successfully.")
+		ob.EmitK8sEvent(r.Recorder, elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply cert secret successfully.")
 		if err = applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
-			r.emitK8sEvent(elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply configmaps")
+			ob.EmitK8sEvent(r.Recorder, elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply configmaps")
 			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
 				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
-		r.emitK8sEvent(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply configmaps successfully.")
+		ob.EmitK8sEvent(r.Recorder, elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply configmaps successfully.")
 		if _, err = applyDeployment(r.Client, r.Scheme, ctx, elastalert); err != nil {
-			r.emitK8sEvent(elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply deployment.")
+			ob.EmitK8sEvent(r.Recorder, elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply deployment.")
 			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
 				return ctrl.Result{}, statusError
 			}
 			return ctrl.Result{}, err
 		}
-		r.emitK8sEvent(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "Apply deployment done, reconcile Elastalert resources successfully.")
+		ob.EmitK8sEvent(r.Recorder, elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "Apply deployment done, reconcile Elastalert resources successfully.")
 	}
 	r.startObservingHealth(elastalert)
 	return ctrl.Result{}, nil
@@ -106,15 +106,11 @@ func (r *ElastalertReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ElastalertReconciler) startObservingHealth(e *esv1alpha1.Elastalert) {
-	r.Observer.Observe(e, r.Client)
+	r.Observer.Observe(e, r.Client, r.Recorder)
 }
 
 func (r *ElastalertReconciler) findSuccessCondition(e *esv1alpha1.Elastalert) *metav1.Condition {
 	return meta.FindStatusCondition(e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
-}
-
-func (r *ElastalertReconciler) emitK8sEvent(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
-	r.Recorder.Eventf(object, eventtype, reason, messageFmt, args)
 }
 
 func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {

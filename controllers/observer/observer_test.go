@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
@@ -29,9 +30,9 @@ func TestObserver(t *testing.T) {
 }
 
 var _ = Describe("Test Observer", func() {
-
 	s := scheme.Scheme
 	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	recoder := record.NewBroadcaster().NewRecorder(s, corev1.EventSource{})
 	ea := types.NamespacedName{
 		Name:      "elastalert",
 		Namespace: "ns",
@@ -522,7 +523,8 @@ var _ = Describe("Test Observer", func() {
 	Context("test observing", func() {
 		It("test checkDeploymentHeath", func() {
 			for _, tc := range testCases {
-				ob := NewObserver(tc.client, ea, time.Second*2)
+
+				ob := NewObserver(tc.client, ea, time.Second*2, recoder)
 				ob.Start()
 				defer ob.Stop()
 				Eventually(func() bool {
@@ -544,7 +546,7 @@ var _ = Describe("Test Observer", func() {
 			}
 			client := fake.NewClientBuilder().Build()
 			manager := NewManager()
-			manager.Observe(elastalert, client)
+			manager.Observe(elastalert, client, recoder)
 			defer manager.StopObserving(ea)
 			Eventually(func() bool {
 				_, ok := manager.getObserver(ea)

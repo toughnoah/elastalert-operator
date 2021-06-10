@@ -3,12 +3,16 @@ package observer
 import (
 	"context"
 	esv1alpha1 "elastalert/api/v1alpha1"
+	"elastalert/controllers/event"
 	"elastalert/controllers/podspec"
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
@@ -29,10 +33,11 @@ type Observer struct {
 	mutex               sync.RWMutex
 	ObservationInterval time.Duration
 	client              client.Client
+	recorder            record.EventRecorder
 }
 
 // NewObserver creates and starts an Observer
-func NewObserver(c client.Client, elastalert types.NamespacedName, interval time.Duration) *Observer {
+func NewObserver(c client.Client, elastalert types.NamespacedName, interval time.Duration, recorder record.EventRecorder) *Observer {
 	observer := Observer{
 		elastalert:          elastalert,
 		client:              c,
@@ -40,6 +45,7 @@ func NewObserver(c client.Client, elastalert types.NamespacedName, interval time
 		stopChan:            make(chan struct{}),
 		stopOnce:            sync.Once{},
 		ObservationInterval: interval,
+		recorder:            recorder,
 	}
 	return &observer
 }
@@ -90,10 +96,12 @@ func (o *Observer) checkDeploymentHeath() error {
 	err = o.client.Get(context.Background(), o.elastalert, dep)
 	if err != nil {
 		log.Error(err, "Failed to get deployment instance while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
+		EmitK8sEvent(o.recorder, ea, corev1.EventTypeWarning, event.EventReasonError, "Get deployment instance failed while observing.")
 		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed)
 	}
 	if dep.Status.AvailableReplicas != *dep.Spec.Replicas {
 		log.Error(err, "AvailableReplicas of deployment instance is 0 .", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
+		EmitK8sEvent(o.recorder, ea, corev1.EventTypeWarning, event.EventReasonError, "AvailableReplicas of deployment instance is 0.")
 		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed)
 	}
 	if dep.Status.AvailableReplicas == *dep.Spec.Replicas {
@@ -102,6 +110,7 @@ func (o *Observer) checkDeploymentHeath() error {
 			"Elastalert.Namespace", o.elastalert.Namespace,
 			"elastalert", o.elastalert.Name,
 		)
+		EmitK8sEvent(o.recorder, ea, corev1.EventTypeNormal, event.EventReasonSuccess, "Deployment has been stabilized.")
 		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionSuccess)
 
 	}
@@ -128,7 +137,7 @@ func (m *Manager) getObserver(key types.NamespacedName) (*Observer, bool) {
 	return observer, ok
 }
 
-func (m *Manager) Observe(elastalert *esv1alpha1.Elastalert, c client.Client) *Observer {
+func (m *Manager) Observe(elastalert *esv1alpha1.Elastalert, c client.Client, recorder record.EventRecorder) *Observer {
 	nsName := types.NamespacedName{
 		Namespace: elastalert.Namespace,
 		Name:      elastalert.Name,
@@ -136,17 +145,17 @@ func (m *Manager) Observe(elastalert *esv1alpha1.Elastalert, c client.Client) *O
 
 	observer, exists := m.getObserver(nsName)
 	if !exists {
-		return m.createOrReplaceObserver(nsName, c)
+		return m.createOrReplaceObserver(nsName, c, recorder)
 	}
 	return observer
 }
 
 // createOrReplaceObserver creates a new observer and adds it to the observers map, replacing existing observers if necessary.
-func (m *Manager) createOrReplaceObserver(elastalert types.NamespacedName, c client.Client) *Observer {
+func (m *Manager) createOrReplaceObserver(elastalert types.NamespacedName, c client.Client, recorder record.EventRecorder) *Observer {
 	m.observerLock.Lock()
 	defer m.observerLock.Unlock()
 
-	observer := NewObserver(c, elastalert, esv1alpha1.ElastAlertObserveInterval)
+	observer := NewObserver(c, elastalert, esv1alpha1.ElastAlertObserveInterval, recorder)
 	observer.Start()
 
 	m.observers[elastalert] = observer
@@ -231,4 +240,8 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 		return nil
 	}
 	return condition
+}
+
+func EmitK8sEvent(recorder record.EventRecorder, object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
+	recorder.Eventf(object, eventtype, reason, messageFmt, args)
 }
