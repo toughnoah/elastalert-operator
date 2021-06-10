@@ -131,15 +131,13 @@ var _ = Describe("Elastalert Controller", func() {
 
 			elastalert = &v1alpha1.Elastalert{}
 
-			By("Start checking for initializing status")
-
+			By("Start checking for INITIALIZING status")
 			Eventually(func() string {
 				_ = k8sClient.Get(context.Background(), Key, elastalert)
 				return elastalert.Status.Phase
 			}, timeout*8, interval).Should(Equal("INITIALIZING"))
 
-			By("Start waiting for failed status")
-
+			By("Start waiting for FAILED status with wrong config")
 			Eventually(func() string {
 				_ = k8sClient.Get(context.Background(), Key, elastalert)
 				return elastalert.Status.Phase
@@ -172,8 +170,7 @@ var _ = Describe("Elastalert Controller", func() {
 			}
 			Expect(k8sClient.Update(context.Background(), elastalert)).To(Succeed())
 
-			By("Start checking for initializing status again")
-
+			By("Start checking for INITIALIZING status again")
 			Eventually(func() string {
 				_ = k8sClient.Get(context.Background(), Key, elastalert)
 				return elastalert.Status.Phase
@@ -237,7 +234,7 @@ var _ = Describe("Elastalert Controller", func() {
 
 			By("Start waiting deployment to be stable.")
 			Eventually(func() int {
-				dep := &appsv1.Deployment{}
+				dep = &appsv1.Deployment{}
 				_ = k8sClient.Get(context.Background(), Key, dep)
 				return int(dep.Status.AvailableReplicas)
 			}, timeout*4, interval).Should(Equal(1))
