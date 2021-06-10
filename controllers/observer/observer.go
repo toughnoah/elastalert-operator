@@ -83,35 +83,17 @@ func (o *Observer) checkDeploymentHeath() error {
 	ea := &esv1alpha1.Elastalert{}
 	err := o.client.Get(context.Background(), o.elastalert, ea)
 	if err != nil {
-		log.Error(
-			err,
-			"Failed to get elastalert instance while observing.",
-			"namespace", o.elastalert.Namespace,
-			"elastalert", o.elastalert.Name)
+		log.Error(err, "Failed to get elastalert instance while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
 		return err
 	}
 	dep := &appsv1.Deployment{}
 	err = o.client.Get(context.Background(), o.elastalert, dep)
 	if err != nil {
-		log.Error(
-			err, "Failed to get deployment instance while observing.",
-			"namespace", o.elastalert.Namespace,
-			"elastalert", o.elastalert.Name,
-		)
+		log.Error(err, "Failed to get deployment instance while observing.", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
 		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed)
 	}
 	if dep.Status.AvailableReplicas != *dep.Spec.Replicas {
-		log.V(1).Info(
-			"Updating Elastalert resources phase to FAILED.",
-			"Elastalert.Namespace", o.elastalert.Namespace,
-			"elastalert", o.elastalert.Name,
-		)
-		log.Error(
-			err, "AvailableReplicas of deployment instance is 0 .",
-			"namespace", o.elastalert.Namespace,
-			"elastalert", o.elastalert.Name,
-		)
-
+		log.Error(err, "AvailableReplicas of deployment instance is 0 .", "namespace", o.elastalert.Namespace, "elastalert", o.elastalert.Name)
 		return UpdateElastalertStatus(o.client, context.Background(), ea, esv1alpha1.ActionFailed)
 	}
 	if dep.Status.AvailableReplicas == *dep.Spec.Replicas {
@@ -205,22 +187,14 @@ func UpdateStatus(c client.Client, ctx context.Context, e *esv1alpha1.Elastalert
 			meta.RemoveStatusCondition(&e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
 		}
 		if err := c.Status().Patch(ctx, e, patch); err != nil {
-			log.Error(
-				err, "Failed to update elastalert failed status",
-				"Elastalert.Name", e.Name,
-				"Status", e.Status.Phase,
-			)
+			log.Error(err, "Failed to update elastalert failed status", "Elastalert.Name", e.Name, "Status", e.Status.Phase)
 			return err
 		}
 	}
 	if len(e.Status.Condictions) == 0 && condition == nil || e.Status.Condictions[0].ObservedGeneration != e.Generation && condition == nil {
 		e.Status.Phase = esv1alpha1.ElastAlertInitializing
 		if err := c.Status().Patch(ctx, e, patch); err != nil {
-			log.Error(
-				err, "Failed to update elastalert failed status",
-				"Elastalert.Name", e.Name,
-				"Status", e.Status.Phase,
-			)
+			log.Error(err, "Failed to update elastalert failed status", "Elastalert.Name", e.Name, "Status", e.Status.Phase)
 			return err
 		}
 	}
