@@ -31,8 +31,7 @@ func (r *DeploymentReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get deployment from server")
 		return ctrl.Result{}, err
 	}
-	_, err = recreateDeployment(r.Client, r.Scheme, ctx, elastalert)
-	if err != nil {
+	if _, err = recreateDeployment(r.Client, r.Scheme, ctx, elastalert); err != nil {
 		if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
 			return ctrl.Result{}, statusError
 		}
@@ -79,12 +78,7 @@ func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Con
 			)
 			return newDeploy, nil
 		}
-		log.Error(
-			err,
-			"Failed to get deployment from server",
-			"Elastalert.Name", e.Name,
-			"Deployment.Name", e.Name,
-		)
+		log.Error(err, "Failed to get deployment from server", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 		return nil, err
 	}
 	// if err is nil, means that event is about about other deployment in same namespace. so just return nil
