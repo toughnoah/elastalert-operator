@@ -22,11 +22,11 @@ import (
 	"elastalert/controllers/event"
 	ob "elastalert/controllers/observer"
 	"elastalert/controllers/podspec"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -36,10 +36,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const name = "elastialert-controller"
+
+var log = ctrl.Log.WithName(name)
+
 // ElastalertReconciler reconciles a Elastalert object
 type ElastalertReconciler struct {
 	client.Client
-	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 	Observer ob.Manager
@@ -49,14 +52,10 @@ type ElastalertReconciler struct {
 //+kubebuilder:rbac:groups=es.noah.domain,resources=elastalerts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=es.noah.domain,resources=elastalerts/finalizers,verbs=update
 func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("elastalert", req.NamespacedName)
 	elastalert := &esv1alpha1.Elastalert{}
 	err := r.Get(ctx, req.NamespacedName, elastalert)
-	log.V(1).Info("Start Elastalert reconciliation.", "Elastalert.Namespace", req.Namespace)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonDeleted, "elastalert instance has been deleted.")
-			log.V(1).Info("Elastalert deleted", "Elastalert.Namespace/Name", req.NamespacedName)
 			r.Observer.StopObserving(req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
@@ -64,65 +63,37 @@ func (r *ElastalertReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		log.Error(err, "Failed to get Elastalert from server")
 		return ctrl.Result{}, err
 	}
-	condition := meta.FindStatusCondition(elastalert.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
-	if condition == nil || condition.ObservedGeneration != elastalert.Generation {
-		if err = applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
-			log.Error(err, "Failed to apply Secret", "Secret.Namespace", req.Namespace)
-			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply Secret.")
-			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
-				log.Error(statusError, "Failed to update elastalert failed status")
-				return ctrl.Result{}, statusError
-			}
-			return ctrl.Result{}, err
-		}
-		log.V(1).Info("Apply cert secret successfully", "Secret.Namespace", req.Namespace)
-		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply cert secret successfully.")
-		if err = applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
-			log.Error(err, "Failed to apply configmaps", "Configmaps.Namespace", req.Namespace)
-			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply configmaps")
-			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
-				log.Error(statusError, "Failed to update elastalert failed status")
-				return ctrl.Result{}, statusError
-			}
-			return ctrl.Result{}, err
-		}
-		log.V(1).Info("Apply configmaps successfully", "Configmaps.Namespace", req.Namespace)
-		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply configmaps successfully.")
-		deploy, err := applyDeployment(r.Client, r.Scheme, ctx, elastalert)
-		if err != nil {
-			log.Error(err, "Failed to apply Deployment", "Deployment.Namespace", req.Namespace)
-			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to apply deployment.")
-			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
-				log.Error(statusError, "Failed to update elastalert failed status")
-				return ctrl.Result{}, statusError
-			}
-			return ctrl.Result{}, err
-		}
-		log.V(1).Info("Apply deployment successfully", "Deployment.Namespace", req.Namespace)
-		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply deployment successfully.")
-		if err := podspec.WaitForStability(r.Client, ctx, *deploy); err != nil {
-			log.Error(err, "Deployment stabilized failed ", "Deployment.Namespace", req.Namespace)
-			r.Recorder.Eventf(elastalert, corev1.EventTypeWarning, event.EventReasonError, "failed to stabilize deployment.")
-			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
-				log.Error(statusError, "Failed to update elastalert failed status")
-				return ctrl.Result{}, statusError
-			}
-			return ctrl.Result{}, err
-		}
-		log.V(1).Info("Deployment has been stabilized", "Deployment.Namespace", req.Namespace)
-		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "deployment has been stabilized.")
-		if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionSuccess); statusError != nil {
-			log.Error(statusError, "Failed to update elastalert success status")
+	cond := r.findSuccessCondition(elastalert)
+	if cond == nil || cond.ObservedGeneration != elastalert.Generation {
+		if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ResourcesCreating); statusError != nil {
 			return ctrl.Result{}, statusError
 		}
-
-		r.Recorder.Eventf(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "reconcile Elastalert resources successfully.")
-		log.V(1).Info("Reconcile Elastalert resources successfully.", "Elastalert.Namespace", req.Namespace)
-		return ctrl.Result{}, nil
-
+		if err = applySecret(r.Client, r.Scheme, ctx, elastalert); err != nil {
+			r.emitK8sEvent(elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply Secret.")
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				return ctrl.Result{}, statusError
+			}
+			return ctrl.Result{}, err
+		}
+		r.emitK8sEvent(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply cert secret successfully.")
+		if err = applyConfigMaps(r.Client, r.Scheme, ctx, elastalert); err != nil {
+			r.emitK8sEvent(elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply configmaps")
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				return ctrl.Result{}, statusError
+			}
+			return ctrl.Result{}, err
+		}
+		r.emitK8sEvent(elastalert, corev1.EventTypeNormal, event.EventReasonCreated, "Apply configmaps successfully.")
+		if _, err = applyDeployment(r.Client, r.Scheme, ctx, elastalert); err != nil {
+			r.emitK8sEvent(elastalert, corev1.EventTypeWarning, event.EventReasonError, "Failed to apply deployment.")
+			if statusError := ob.UpdateElastalertStatus(r.Client, ctx, elastalert, esv1alpha1.ActionFailed); statusError != nil {
+				return ctrl.Result{}, statusError
+			}
+			return ctrl.Result{}, err
+		}
+		r.emitK8sEvent(elastalert, corev1.EventTypeNormal, event.EventReasonSuccess, "Apply deployment done, reconcile Elastalert resources successfully.")
 	}
 	r.startObservingHealth(elastalert)
-	log.V(1).Info("condition.ObservedGeneration and elastalert.Generation matched. Skipping reconciliation", "Elastalert.Namespace", req.Namespace)
 	return ctrl.Result{}, nil
 }
 
@@ -138,14 +109,34 @@ func (r *ElastalertReconciler) startObservingHealth(e *esv1alpha1.Elastalert) {
 	r.Observer.Observe(e, r.Client)
 }
 
+func (r *ElastalertReconciler) findSuccessCondition(e *esv1alpha1.Elastalert) *metav1.Condition {
+	return meta.FindStatusCondition(e.Status.Condictions, esv1alpha1.ElastAlertAvailableType)
+}
+
+func (r *ElastalertReconciler) emitK8sEvent(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
+	r.Recorder.Eventf(object, eventtype, reason, messageFmt, args)
+}
+
 func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
 	stringCert := e.Spec.Cert
 	err := podspec.PatchConfigSettings(e, stringCert)
 	if err != nil {
+		log.Error(
+			err,
+			"Failed to patch config.yaml configmaps",
+			"Elastalert.Namespace", e.Namespace,
+			"Configmaps.Namespace", e.Namespace,
+		)
 		return err
 	}
 	err = podspec.PatchAlertSettings(e)
 	if err != nil {
+		log.Error(
+			err,
+			"Failed to patch alert for rules configmaps",
+			"Elastalert.Namespace", e.Namespace,
+			"Configmaps.Namespace", e.Namespace,
+		)
 		return err
 	}
 	list := &corev1.ConfigMapList{}
@@ -167,13 +158,23 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 	if len(list.Items) != 0 {
 		for _, cm := range mupdate {
 			if _, ok := mexist[cm.Name]; ok {
-				err = c.Update(ctx, &cm)
-				if err != nil {
+				if err = c.Update(ctx, &cm); err != nil {
+					log.Error(
+						err,
+						"Failed to update configmaps",
+						"Elastalert.Namespace", e.Namespace,
+						"Configmaps.Namespace", e.Namespace,
+					)
 					return err
 				}
 			} else {
-				err = c.Create(ctx, &cm)
-				if err != nil {
+				if err = c.Create(ctx, &cm); err != nil {
+					log.Error(
+						err,
+						"Failed to create configmaps",
+						"Elastalert.Namespace", e.Namespace,
+						"Configmaps.Namespace", e.Namespace,
+					)
 					return err
 				}
 			}
@@ -181,37 +182,63 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		return nil
 	} else {
 		for _, cm := range mupdate {
-			err = c.Create(ctx, &cm)
-			if err != nil {
+			if err = c.Create(ctx, &cm); err != nil {
+				log.Error(
+					err,
+					"Failed to create configmaps",
+					"Elastalert.Namespace", e.Namespace,
+					"Configmaps.Namespace", e.Namespace,
+				)
 				return err
 			}
 		}
 
 	}
+	log.V(1).Info(
+		"Apply configmaps successfully",
+		"Elastalert.Namespace", e.Namespace,
+		"Configmaps.Namespace", e.Namespace,
+	)
 	return nil
 }
 
 func applySecret(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) error {
 	secret := &corev1.Secret{}
-	newsecret, err := podspec.GenerateCertSecret(Scheme, e)
+	newSecret, err := podspec.GenerateCertSecret(Scheme, e)
 	if err != nil {
 		return err
 	}
-	if err := c.Get(ctx, types.NamespacedName{
+	if err = c.Get(ctx, types.NamespacedName{
 		Namespace: e.Namespace,
 		Name:      e.Name + podspec.DefaultCertSuffix,
 	},
 		secret); err != nil {
 		if k8serrors.IsNotFound(err) {
-			if err = c.Create(ctx, newsecret); err != nil {
+			if err = c.Create(ctx, newSecret); err != nil {
+				log.Error(
+					err,
+					"Failed to create Secret",
+					"Elastalert.Namespace", e.Namespace,
+					"Secret.Name", secret.Name,
+				)
 				return err
 			}
 		}
 	} else {
-		if err = c.Update(ctx, newsecret); err != nil {
+		if err = c.Update(ctx, newSecret); err != nil {
+			log.Error(
+				err,
+				"Failed to update Secret",
+				"Elastalert.Namespace", e.Namespace,
+			)
 			return err
 		}
 	}
+	log.V(1).Info(
+		"Apply cert secret successfully",
+		"Elastalert.Namespace", e.Namespace,
+		"Secret.Name", secret.Name,
+	)
 	return nil
 }
 
@@ -230,6 +257,12 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 			}
 			err = c.Create(ctx, deploy)
 			if err != nil {
+				log.Error(
+					err,
+					"Failed to create Deployment",
+					"Elastalert.Name", e.Name,
+					"Deployment.Name", e.Name,
+				)
 				return nil, err
 			}
 			return deploy, nil
@@ -242,8 +275,19 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}
 		err = c.Update(ctx, deploy)
 		if err != nil {
+			log.Error(
+				err,
+				"Failed to update Deployment",
+				"Elastalert.Name", e.Name,
+				"Deployment.Name", e.Name,
+			)
 			return nil, err
 		}
+		log.V(1).Info(
+			"Apply deployment successfully",
+			"Elastalert.Name", e.Name,
+			"Deployment.Name", e.Name,
+		)
 		return deploy, nil
 	}
 }

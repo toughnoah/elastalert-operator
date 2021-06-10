@@ -18,12 +18,24 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 	case esv1alpha1.RuleSuffx:
 		data, err = GenerateYamlMap(e.Spec.Rule)
 		if err != nil {
+			log.Error(
+				err,
+				"Failed to generate rules configmaps",
+				"Elastalert.Namespace", e.Namespace,
+				"Configmaps.Namespace", e.Namespace,
+			)
 			return nil, err
 		}
 	case esv1alpha1.ConfigSuffx:
 		rawmap, err := e.Spec.ConfigSetting.GetMap()
 		out, err := yaml.Marshal(rawmap)
 		if err != nil {
+			log.Error(
+				err,
+				"Failed to generate config.yaml configmaps",
+				"Elastalert.Namespace", e.Namespace,
+				"Configmaps.Namespace", e.Namespace,
+			)
 			return nil, err
 		}
 		data["config.yaml"] = string(out)
@@ -37,6 +49,12 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 	}
 	err = ctrl.SetControllerReference(e, cm, Scheme)
 	if err != nil {
+		log.Error(
+			err,
+			"Failed to generate configmaps",
+			"Elastalert.Namespace", e.Namespace,
+			"Configmaps.Namespace", e.Namespace,
+		)
 		return nil, err
 	}
 	return cm, nil

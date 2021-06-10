@@ -15,14 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"testing"
-	"time"
 )
 
 func TestReCreateDeployment(t *testing.T) {
@@ -46,11 +43,9 @@ func TestReCreateDeployment(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			s := scheme.Scheme
-			var log = ctrl.Log.WithName("test").WithName("Elastalert")
 			cl := fake.NewClientBuilder().Build()
 			r := &ElastalertReconciler{
 				Client: cl,
-				Log:    log,
 				Scheme: s,
 			}
 			monkey.Patch(podspec.GetUtcTimeString, func() string {
@@ -248,20 +243,14 @@ func TestDeploymentReconcile(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		defer monkey.Unpatch(podspec.WaitForStability)
 		t.Run(tc.desc, func(t *testing.T) {
-			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &DeploymentReconciler{
 				Client: tc.c,
-				Log:    log,
 				Scheme: s,
 			}
 			ctx := context.Background()
 			nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
 			req := reconcile.Request{NamespacedName: nsn}
-			monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
-				return nil
-			})
 			_, err := r.Reconcile(ctx, req)
 			assert.NoError(t, err)
 			if !tc.testNotfound {
@@ -331,12 +320,9 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 	for _, tc := range testCases {
 		defer monkey.Unpatch(recreateDeployment)
 		defer monkey.Unpatch(observer.UpdateElastalertStatus)
-		defer monkey.Unpatch(podspec.WaitForStability)
 		t.Run(tc.desc, func(t *testing.T) {
-			log := ctrl.Log.WithName("test").WithName("Elastalert")
 			r := &DeploymentReconciler{
 				Client: tc.c,
-				Log:    log,
 				Scheme: s,
 			}
 			if !tc.isToWait {
@@ -350,9 +336,6 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 				monkey.Patch(recreateDeployment, func(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
 					return nil, errors.New("test")
 				})
-				monkey.Patch(podspec.WaitForStability, func(c client.Client, ctx context.Context, dep appsv1.Deployment) error {
-					return errors.New("test")
-				})
 				monkey.Patch(observer.UpdateElastalertStatus, func(c client.Client, ctx context.Context, e *v1alpha1.Elastalert, flag string) error {
 					return errors.New("test update failed")
 				})
@@ -366,63 +349,11 @@ func TestDeploymentReconcileFailed(t *testing.T) {
 	}
 }
 
-func TestDeploymentReconcileFailedWaitForStability(t *testing.T) {
-	s := scheme.Scheme
-	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
-	testCases := []struct {
-		desc string
-		c    client.Client
-	}{
-		{
-			desc: "test deployment reconcile failed",
-			c: fake.NewClientBuilder().WithRuntimeObjects(
-				&v1alpha1.Elastalert{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "test",
-						Name:      "test-elastalert",
-					},
-					Spec: v1alpha1.ElastalertSpec{
-						PodTemplateSpec: corev1.PodTemplateSpec{
-							Spec: corev1.PodSpec{
-								Containers: []corev1.Container{
-									{
-										Name: "elastalert",
-									},
-								},
-							},
-						},
-					},
-				}).Build(),
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			defer monkey.Unpatch(wait.Poll)
-			log := ctrl.Log.WithName("test").WithName("Elastalert")
-			r := &DeploymentReconciler{
-				Client: tc.c,
-				Log:    log,
-				Scheme: s,
-			}
-			ctx := context.Background()
-			nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
-			req := reconcile.Request{NamespacedName: nsn}
-			monkey.Patch(wait.Poll, func(interval, timeout time.Duration, condition wait.ConditionFunc) error {
-				return errors.New("test WaitForStability failed")
-			})
-			_, err := r.Reconcile(ctx, req)
-			assert.Error(t, err)
-		})
-	}
-}
-
 func TestDeploymentReconcile_SetupWithManager(t *testing.T) {
 	s := scheme.Scheme
 	s.AddKnownTypes(appsv1.SchemeGroupVersion)
-	var log = ctrl.Log.WithName("test").WithName("Deployment")
 	r := &DeploymentReconciler{
 		Client: fake.NewClientBuilder().WithRuntimeObjects().Build(),
-		Log:    log,
 		Scheme: s,
 	}
 	assert.Error(t, r.SetupWithManager(nil))
