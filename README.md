@@ -10,7 +10,15 @@ The Elastalert Operator is an implementation of a [Kubernetes Operator](https://
 Firstly, learn [How to use elastalert](https://elastalert.readthedocs.io/en/latest/), exactly how to setup a `config.yaml` and `rule`.
 The default command to start elastalert container is  `elastalert --config /etc/elastalert/config.yaml --verbose`.
 
-To install the operator, please refer to those yamls in`deploy` directory.
+To install the operator, run:
+```
+kubectl create namespace alert
+kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/es.noah.domain_elastalerts.yaml
+kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/role.yaml
+kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/role_binding.yaml
+kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/service_account.yaml
+kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/elastalert-operator.yaml
+```
 
 Args for Operator:
 ```console
@@ -109,6 +117,7 @@ config.yaml  rules
 # /etc/elastalert/rules ls
 error-message.yaml      error-status-code.yaml
 ```
+
 ## What's more
 ### Elasticsearch Cert 
 ```
@@ -152,7 +161,12 @@ spec:
       -----END CERTIFICATE-----
 EOF
 ```
-This action will create a new `secret` mounted as `/ssl/elasticCA.crt`
+This action will create a new `secret` mounted as `/ssl/elasticCA.crt`, and operator will automatically create a secret.
+```console
+# kubectl get -n alert secret
+NAME                               TYPE                                  DATA   AGE
+elastalert-es-cert                 Opaque                                1      10m
+```
 
 ### Overall
 `overall` is used to config global alert settings. If you defined `alert` in a rule, it will override `overall` settings.

@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const name = "elastialert-controller"
+const name = "elastalert-controller"
 
 var log = ctrl.Log.WithName(name)
 
