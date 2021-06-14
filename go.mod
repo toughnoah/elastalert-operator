@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/bouk/monkey v1.0.2
-	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
@@ -14,7 +13,6 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
-	github.com/prashantv/gostub v1.0.0
 	github.com/prometheus/client_golang v1.9.0 // indirect
 	github.com/prometheus/procfs v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
