@@ -68,9 +68,6 @@ const (
 	ElastAlertPollInterval = time.Second * 5
 )
 
-// for gostub, it has to be a var.
-var ElastAlertPollTimeout = time.Minute * 2
-
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
