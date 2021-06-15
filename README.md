@@ -17,7 +17,7 @@ kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastaler
 kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/role.yaml
 kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/role_binding.yaml
 kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/service_account.yaml
-kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/elastalert-operator.yaml
+kubectl create -n alert -f https://raw.githubusercontent.com/toughnoah/elastalert-operator/master/deploy/deployment.yaml
 ```
 
 Args for Operator:
@@ -235,15 +235,22 @@ You can override the default command here.
 ~~~
 FROM docker.io/library/python:3.7.4-alpine
 
-RUN apk add gcc g++ make libffi-dev openssl-dev
+ENV TZ=Asia/Shanghai
 
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
+
+RUN apk add gcc g++ make libffi-dev openssl-dev
+
+RUN apk add --no-cache tzdata
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN pip install --upgrade pip
 
 RUN pip install elastalert
 
 ENTRYPOINT ["elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"]
+
 ~~~
 
 ### Notice
