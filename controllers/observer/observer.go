@@ -242,6 +242,6 @@ func NewCondition(e *esv1alpha1.Elastalert, flag string) *metav1.Condition {
 	return condition
 }
 
-func EmitK8sEvent(recorder record.EventRecorder, object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
-	recorder.Eventf(object, eventtype, reason, messageFmt, args)
+func EmitK8sEvent(recorder record.EventRecorder, object runtime.Object, eventtype, reason, messageFmt string) {
+	recorder.Eventf(object, eventtype, reason, messageFmt)
 }
