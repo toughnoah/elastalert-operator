@@ -60,33 +60,31 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 	return cm, nil
 }
 
+// PatchConfigSettings TODO should change to Chain Of Responsibility
 func PatchConfigSettings(e *esv1alpha1.Elastalert, stringCert string) error {
 	config, err := e.Spec.ConfigSetting.GetMap()
-	if config == nil || err != nil {
+	if err != nil {
 		return errors.New("get config failed")
 	}
-	config["rules_folder"] = DefaultRulesFolder
-	if config["use_ssl"] != nil && config["use_ssl"].(bool) == true && stringCert == "" {
-		config["verify_certs"] = false
+	rawConfig := &RawConfig{
+		config: config,
+		cert:   stringCert,
 	}
+	drHandler := &DefaultRulesFolderHandler{}
+	useSSLHandler := &UseSSLHandler{}
+	drHandler.setNext(useSSLHandler)
 
-	if config["use_ssl"] != nil && config["use_ssl"].(bool) == true && stringCert != "" {
-		config["verify_certs"] = true
-		config["ca_certs"] = DefaultElasticCertPath
-	}
-	if config["use_ssl"] != nil && config["use_ssl"].(bool) == false {
-		delete(config, "ca_certs")
-		delete(config, "verify_certs")
-	}
-	if config["verify_certs"] != nil && config["verify_certs"].(bool) == false && stringCert != "" {
-		delete(config, "ca_certs")
-	}
+	addCertHandler := &AddCertHandler{}
+	useSSLHandler.setNext(addCertHandler)
 
-	if config["use_ssl"] == nil {
-		delete(config, "verify_certs")
-		delete(config, "ca_certs")
+	verifyCertHandler := &VerifyCertHandler{}
+	addCertHandler.setNext(verifyCertHandler)
+
+	drHandler.handle(rawConfig)
+	if rawConfig.err != nil {
+		return rawConfig.err
 	}
-	e.Spec.ConfigSetting = esv1alpha1.NewFreeForm(config)
+	e.Spec.ConfigSetting = esv1alpha1.NewFreeForm(rawConfig.config)
 	return nil
 }
 
@@ -138,4 +136,106 @@ func PatchAlertSettings(e *esv1alpha1.Elastalert) error {
 	e.Spec.Rule = ruleArray
 
 	return nil
+}
+
+type RawConfig struct {
+	config map[string]interface{}
+	cert   string
+	err    error
+	useSSL bool
+}
+
+type handler interface {
+	handle(config *RawConfig)
+	setNext(handler handler)
+}
+
+type DefaultRulesFolderHandler struct {
+	next handler
+}
+
+func (d *DefaultRulesFolderHandler) handle(raw *RawConfig) {
+	if raw.err != nil {
+		return
+	}
+	if raw.config == nil {
+		raw.err = errors.New("get config map failed")
+	} else {
+		raw.config["rules_folder"] = DefaultRulesFolder
+	}
+	d.next.handle(raw)
+}
+
+func (d *DefaultRulesFolderHandler) setNext(next handler) {
+	d.next = next
+}
+
+type UseSSLHandler struct {
+	next handler
+}
+
+func (u *UseSSLHandler) handle(raw *RawConfig) {
+	if raw.err != nil {
+		return
+	}
+	if raw.config["use_ssl"] != nil {
+		useSSL, ok := raw.config["use_ssl"].(bool)
+		if !ok {
+			raw.err = errors.New("error type for 'use_ssl', want bool")
+		} else {
+			raw.useSSL = useSSL
+		}
+	} else {
+		raw.useSSL = false
+	}
+	u.next.handle(raw)
+}
+func (u *UseSSLHandler) setNext(next handler) {
+	u.next = next
+}
+
+type AddCertHandler struct {
+	next handler
+}
+
+func (a *AddCertHandler) handle(raw *RawConfig) {
+	if raw.err != nil {
+		return
+	}
+	if raw.useSSL {
+		if raw.cert != "" {
+			raw.config["verify_certs"] = true
+			raw.config["ca_certs"] = DefaultElasticCertPath
+		} else {
+			raw.config["verify_certs"] = false
+		}
+	} else {
+		delete(raw.config, "verify_certs")
+		delete(raw.config, "ca_certs")
+	}
+	a.next.handle(raw)
+}
+func (a *AddCertHandler) setNext(next handler) {
+	a.next = next
+}
+
+type VerifyCertHandler struct {
+	next handler
+}
+
+func (v *VerifyCertHandler) handle(raw *RawConfig) {
+	if raw.err != nil {
+		return
+	}
+	if raw.config["verify_certs"] != nil {
+		vc, ok := raw.config["verify_certs"].(bool)
+		if !ok {
+			raw.err = errors.New("error type for 'verify_certs', want bool")
+		} else if vc == false && raw.cert != "" {
+			delete(raw.config, "ca_certs")
+		}
+	}
+}
+func (v *VerifyCertHandler) setNext(next handler) {
+	v.next = next
 }

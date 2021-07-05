@@ -138,12 +138,12 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 	if err != nil {
 		return err
 	}
-	mexist := podspec.ConfigMapsToMap(list.Items)
-	var mupdate []corev1.ConfigMap
-	mupdate = append(mupdate, *rule, *config)
+	configMapsMaps := podspec.ConfigMapsToMap(list.Items)
+	var configMapsList []corev1.ConfigMap
+	configMapsList = append(configMapsList, *rule, *config)
 	if len(list.Items) != 0 {
-		for _, cm := range mupdate {
-			if _, ok := mexist[cm.Name]; ok {
+		for _, cm := range configMapsList {
+			if _, ok := configMapsMaps[cm.Name]; ok {
 				if err = c.Update(ctx, &cm); err != nil {
 					log.Error(err, "Failed to update configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 					return err
@@ -157,7 +157,7 @@ func applyConfigMaps(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		}
 		return nil
 	} else {
-		for _, cm := range mupdate {
+		for _, cm := range configMapsList {
 			if err = c.Create(ctx, &cm); err != nil {
 				log.Error(err, "Failed to create configmaps", "Elastalert.Namespace", e.Namespace, "Configmaps.Namespace", e.Namespace)
 				return err
