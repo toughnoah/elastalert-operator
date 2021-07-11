@@ -27,8 +27,8 @@ func GenerateNewConfigmap(Scheme *runtime.Scheme, e *esv1alpha1.Elastalert, suff
 			return nil, err
 		}
 	case esv1alpha1.ConfigSuffx:
-		rawmap, err := e.Spec.ConfigSetting.GetMap()
-		out, err := yaml.Marshal(rawmap)
+		rawMap, err := e.Spec.ConfigSetting.GetMap()
+		out, err := yaml.Marshal(rawMap)
 		if err != nil {
 			log.Error(
 				err,

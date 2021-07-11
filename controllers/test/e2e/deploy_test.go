@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"elastalert/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
@@ -245,7 +246,7 @@ var _ = Describe("Elastalert Controller", func() {
 
 func compare(source string, dest map[string]interface{}) bool {
 	out, _ := yaml.Marshal(dest)
-	return reflect.DeepEqual([]byte(source), out)
+	return bytes.Compare([]byte(source), out) == 0
 }
 
 func newSampleElastalert() *v1alpha1.Elastalert {
