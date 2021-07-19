@@ -22,6 +22,7 @@ import (
 	"elastalert/controllers/event"
 	ob "elastalert/controllers/observer"
 	"elastalert/controllers/podspec"
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -219,6 +220,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 				return nil, err
 			}
 			if err = c.Create(ctx, deploy); err != nil {
+				fmt.Println("go here 1")
 				log.Error(err, "Failed to create Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 				return nil, err
 			}
@@ -234,6 +236,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 			log.Error(err, "Failed to update Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 			return nil, err
 		}
+
 		log.V(1).Info(
 			"Apply deployment successfully",
 			"Elastalert.Name", e.Name,

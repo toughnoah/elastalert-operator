@@ -1623,3 +1623,33 @@ func TestApplySecretError(t *testing.T) {
 	err = applySecret(r.Client, r.Scheme, context.Background(), &ea)
 	assert.Error(t, err)
 }
+
+func TestApplyDeploymentError(t *testing.T) {
+	c := &ErrorClient{}
+	ea := v1alpha1.Elastalert{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "esa1",
+			Name:      "my-esa",
+		},
+		Spec: v1alpha1.ElastalertSpec{
+			Cert: "abc",
+		},
+	}
+	s := scheme.Scheme
+	r := &ElastalertReconciler{
+		Client: c,
+		Scheme: s,
+	}
+	monkey.Patch(k8serrors.IsNotFound, func(err error) bool {
+		return true
+	})
+	r.Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	_, err := applyDeployment(r.Client, r.Scheme, context.Background(), &ea)
+	assert.Error(t, err)
+	monkey.Unpatch(k8serrors.IsNotFound)
+	monkey.PatchInstanceMethod(reflect.TypeOf(c), "Get", func(e *ErrorClient, ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		return nil
+	})
+	_, err = applyDeployment(r.Client, r.Scheme, context.Background(), &ea)
+	assert.Error(t, err)
+}
