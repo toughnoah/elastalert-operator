@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -1589,4 +1590,36 @@ func TestReconcileRuntimeFailedWithUpdateStatus(t *testing.T) {
 			assert.Equal(t, tc.want, ea)
 		})
 	}
+}
+
+func TestApplySecretError(t *testing.T) {
+	c := &ErrorClient{}
+	ea := v1alpha1.Elastalert{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "esa1",
+			Name:      "my-esa",
+		},
+		Spec: v1alpha1.ElastalertSpec{
+			Cert: "abc",
+		},
+	}
+	s := scheme.Scheme
+	r := &ElastalertReconciler{
+		Client: c,
+		Scheme: s,
+	}
+	monkey.Patch(k8serrors.IsNotFound, func(err error) bool {
+		return true
+	})
+	se := corev1.Secret{}
+	r.Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	r.Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &se)
+	err := applySecret(r.Client, r.Scheme, context.Background(), &ea)
+	assert.Error(t, err)
+	monkey.Unpatch(k8serrors.IsNotFound)
+	monkey.PatchInstanceMethod(reflect.TypeOf(c), "Get", func(e *ErrorClient, ctx context.Context, key client.ObjectKey, obj client.Object) error {
+		return nil
+	})
+	err = applySecret(r.Client, r.Scheme, context.Background(), &ea)
+	assert.Error(t, err)
 }

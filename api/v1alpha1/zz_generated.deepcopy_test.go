@@ -74,6 +74,19 @@ func TestElastalertList_DeepCopy(t *testing.T) {
 	newea := ea.DeepCopy()
 	assert.Equal(t, newea, ea)
 }
+func TestElastalertList_DeepCopyObject(t *testing.T) {
+	ea := &ElastalertList{
+		Items: []Elastalert{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+			},
+		},
+	}
+	newea := ea.DeepCopyObject()
+	assert.Equal(t, newea, ea)
+}
 
 func TestFreeForm_DeepCopyInTo(t *testing.T) {
 	nf := NewFreeForm(map[string]interface{}{

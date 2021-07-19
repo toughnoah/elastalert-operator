@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -360,7 +361,7 @@ func TestDeploymentReconcile_SetupWithManager(t *testing.T) {
 	assert.Error(t, r.SetupWithManager(nil))
 }
 
-func TestRecreateGetFailed(t *testing.T) {
+func TestRecreateGetError(t *testing.T) {
 	defer monkey.Unpatch(k8serrors.IsNotFound)
 	s := scheme.Scheme
 	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
@@ -388,4 +389,79 @@ func TestDeploymentReconcile_ReconcileError(t *testing.T) {
 	})
 	_, err := r.Reconcile(context.Background(), req)
 	require.Error(t, err)
+}
+
+func TestClientFailed(t *testing.T) {
+
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	c := &ErrorClient{}
+	_, err := recreateDeployment(c, scheme.Scheme, context.Background(), &v1alpha1.Elastalert{})
+	require.Error(t, err)
+}
+
+var _ client.Client = &ErrorClient{}
+
+type ErrorClient struct {
+}
+
+func (e *ErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+	return errors.New("for test")
+}
+
+func (e *ErrorClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	return errors.New("for test")
+}
+
+func (e *ErrorClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	return errors.New("for test")
+}
+
+// Delete deletes the given obj from Kubernetes cluster.
+func (e *ErrorClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	return errors.New("for test")
+}
+
+// Update updates the given obj in the Kubernetes cluster. obj must be a
+// struct pointer so that obj can be updated with the content returned by the Server.
+func (e *ErrorClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return errors.New("for test")
+}
+
+// Patch patches the given obj in the Kubernetes cluster. obj must be a
+// struct pointer so that obj can be updated with the content returned by the Server.
+func (e *ErrorClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return errors.New("for test")
+}
+
+// DeleteAllOf deletes all objects of the given type matching the given options.
+func (e *ErrorClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+	return errors.New("for test")
+}
+
+func (e *ErrorClient) Scheme() *runtime.Scheme {
+	return nil
+}
+
+// RESTMapper returns the rest this client is using.
+func (e *ErrorClient) RESTMapper() meta.RESTMapper {
+	return nil
+}
+
+func (e *ErrorClient) Status() client.StatusWriter {
+	return &ErrorStatusWriter{}
+}
+
+type ErrorStatusWriter struct {
+}
+
+func (e *ErrorStatusWriter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	return errors.New("for test")
+}
+
+// Patch patches the given object's subresource. obj must be a struct
+// pointer so that obj can be updated with the content returned by the
+// Server.
+func (e *ErrorStatusWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return errors.New("for test")
 }
