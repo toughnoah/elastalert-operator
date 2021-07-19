@@ -20,12 +20,7 @@ type PodTemplateBuilder struct {
 func GenerateNewDeployment(Scheme *runtime.Scheme, e *v1alpha1.Elastalert) (*appsv1.Deployment, error) {
 	deploy := BuildDeployment(*e)
 	if err := ctrl.SetControllerReference(e, deploy, Scheme); err != nil {
-		log.Error(
-			err,
-			"Failed to generate Deployment",
-			"Elastalert.Name", e.Name,
-			"Deployment.Name", e.Name,
-		)
+		log.Error(err, "Failed to generate Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 		return nil, err
 	}
 	return deploy, nil

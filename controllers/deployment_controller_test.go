@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -357,5 +358,34 @@ func TestDeploymentReconcile_SetupWithManager(t *testing.T) {
 		Scheme: s,
 	}
 	assert.Error(t, r.SetupWithManager(nil))
+}
 
+func TestRecreateGetFailed(t *testing.T) {
+	defer monkey.Unpatch(k8serrors.IsNotFound)
+	s := scheme.Scheme
+	s.AddKnownTypes(corev1.SchemeGroupVersion, &v1alpha1.Elastalert{})
+	c := fake.NewClientBuilder().Build()
+	_, err := recreateDeployment(c, scheme.Scheme, context.Background(), &v1alpha1.Elastalert{})
+	require.Error(t, err)
+
+	monkey.Patch(k8serrors.IsNotFound, func(err error) bool {
+		return false
+	})
+	_, err = recreateDeployment(c, s, context.Background(), &v1alpha1.Elastalert{})
+	require.Error(t, err)
+}
+
+func TestDeploymentReconcile_ReconcileError(t *testing.T) {
+	defer monkey.Unpatch(k8serrors.IsNotFound)
+	nsn := types.NamespacedName{Name: "test-elastalert", Namespace: "test"}
+	req := reconcile.Request{NamespacedName: nsn}
+	r := &DeploymentReconciler{
+		Client: fake.NewClientBuilder().Build(),
+		Scheme: scheme.Scheme,
+	}
+	monkey.Patch(k8serrors.IsNotFound, func(err error) bool {
+		return false
+	})
+	_, err := r.Reconcile(context.Background(), req)
+	require.Error(t, err)
 }

@@ -49,7 +49,6 @@ func (r *DeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func recreateDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e *esv1alpha1.Elastalert) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
-
 	err := c.Get(ctx,
 		types.NamespacedName{
 			Namespace: e.Namespace,

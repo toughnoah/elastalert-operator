@@ -217,11 +217,8 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 			if err != nil {
 				return nil, err
 			}
-			err = c.Create(ctx, deploy)
-			if err != nil {
-				log.Error(
-					err, "Failed to create Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name,
-				)
+			if err = c.Create(ctx, deploy); err != nil {
+				log.Error(err, "Failed to create Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 				return nil, err
 			}
 			return deploy, nil
@@ -232,8 +229,7 @@ func applyDeployment(c client.Client, Scheme *runtime.Scheme, ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		err = c.Update(ctx, deploy)
-		if err != nil {
+		if err = c.Update(ctx, deploy); err != nil {
 			log.Error(err, "Failed to update Deployment", "Elastalert.Name", e.Name, "Deployment.Name", e.Name)
 			return nil, err
 		}

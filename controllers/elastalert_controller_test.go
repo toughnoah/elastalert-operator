@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -597,6 +598,24 @@ func TestReconcile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReconcileError(t *testing.T) {
+	defer monkey.Unpatch(k8serrors.IsNotFound)
+	s := scheme.Scheme
+	r := &ElastalertReconciler{
+		Client:   fake.NewClientBuilder().Build(),
+		Scheme:   s,
+		Recorder: record.NewBroadcaster().NewRecorder(s, corev1.EventSource{}),
+		Observer: *ob.NewManager(),
+	}
+	nsn := types.NamespacedName{Name: "my-esa", Namespace: "esa1"}
+	req := reconcile.Request{NamespacedName: nsn}
+	monkey.Patch(k8serrors.IsNotFound, func(err error) bool {
+		return false
+	})
+	_, err := r.Reconcile(context.Background(), req)
+	require.Error(t, err)
 }
 
 func TestReconcileApplyDeploymentFailed(t *testing.T) {
