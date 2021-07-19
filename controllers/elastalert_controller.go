@@ -190,6 +190,7 @@ func applySecret(c client.Client, Scheme *runtime.Scheme, ctx context.Context, e
 				return err
 			}
 		}
+		return err
 	} else {
 		if err = c.Update(ctx, newSecret); err != nil {
 			log.Error(err, "Failed to update Secret", "Elastalert.Namespace", e.Namespace)
