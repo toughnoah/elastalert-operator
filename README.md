@@ -1,11 +1,25 @@
-![Go 1.16](https://img.shields.io/badge/Go-v1.16-blue)
 [![codecov](https://codecov.io/gh/toughnoah/elastalert-operator/branch/master/graph/badge.svg?token=5B1DBTNIDN)](https://codecov.io/gh/toughnoah/elastalert-operator) [![CI Workflow](https://github.com/toughnoah/elastalert-operator/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/toughnoah/elastalert-operator/actions/workflows/test-coverage.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/toughnoah/elastalert-operator)](https://goreportcard.com/report/github.com/toughnoah/elastalert-operator)
+<!-- vscode-markdown-toc -->
+* 1. [Getting started](#Gettingstarted)
+* 2. [What's more](#Whatsmore)
+	* 2.1. [Elasticsearch Cert](#ElasticsearchCert)
+	* 2.2. [Overall](#Overall)
+	* 2.3. [Pod Template](#PodTemplate)
+	* 2.4. [Build Your Own Elastalert Dockerfile.](#BuildYourOwnElastalertDockerfile.)
+	* 2.5. [Notice](#Notice)
+* 3. [Contact Me](#ContactMe)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->![Go 1.16](https://img.shields.io/badge/Go-v1.16-blue)
 # Elastalert Operator for Kubernetes
 
 The Elastalert Operator is an implementation of a [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
-## Getting started
+##  1. <a name='Gettingstarted'></a>Getting started
 
 Firstly, learn [How to use elastalert](https://elastalert.readthedocs.io/en/latest/), exactly how to setup a `config.yaml` and `rule`.
 The default command to start elastalert container is  `elastalert --config /etc/elastalert/config.yaml --verbose`.
@@ -118,8 +132,8 @@ config.yaml  rules
 error-message.yaml      error-status-code.yaml
 ```
 
-## What's more
-### Elasticsearch Cert 
+##  2. <a name='Whatsmore'></a>What's more
+###  2.1. <a name='ElasticsearchCert'></a>Elasticsearch Cert 
 ```
 kubectl apply -n alert -f - <<EOF
 apiVersion: es.noah.domain/v1alpha1
@@ -168,7 +182,7 @@ NAME                               TYPE                                  DATA   
 elastalert-es-cert                 Opaque                                1      10m
 ```
 
-### Overall
+###  2.2. <a name='Overall'></a>Overall
 `overall` is used to config global alert settings. If you defined `alert` in a rule, it will override `overall` settings.
 ```
 kubectl apply -n alert -f - <<EOF
@@ -197,7 +211,7 @@ spec:
     ...
 EOF
 ```
-### Pod Template
+###  2.3. <a name='PodTemplate'></a>Pod Template
 Define customized podTemplate
 ```
 kubectl apply -n alert -f - <<EOF
@@ -230,7 +244,7 @@ EOF
 ```
 You can override the default command here.
 
-### Build Your Own Elastalert Dockerfile.
+###  2.4. <a name='BuildYourOwnElastalertDockerfile.'></a>Build Your Own Elastalert Dockerfile.
 
 ~~~
 FROM docker.io/library/python:3.7.4-alpine
@@ -253,10 +267,10 @@ ENTRYPOINT ["elastalert", "--config", "/etc/elastalert/config.yaml", "--verbose"
 
 ~~~
 
-### Notice
+###  2.5. <a name='Notice'></a>Notice
 You don't have to specify `rules_folder` in config section, because operator will auto patch `rules_folder: /etc/elastalert/rules/..data/` for your config.
 The reason why have to be `..data/` is the workaround when the configmap is mounted as file(such as `/etc/elastalert/rules/test.yaml`) in a pod, it will create a soft-link to `/etc/elastalert/rules/..data/test.yaml`.
 That is to say, you will receive duplicated rules name error that both files in `rules` and `..data` would be loaded if you specify merely `rules_folder: /etc/elastalert/rules`
 
-## Contact Me
+##  3. <a name='ContactMe'></a>Contact Me
 Any advice is welcome! Please email to toughnoah@163.com
