@@ -1,3 +1,4 @@
+![Go 1.16](https://img.shields.io/badge/Go-v1.16-blue)
 [![codecov](https://codecov.io/gh/toughnoah/elastalert-operator/branch/master/graph/badge.svg?token=5B1DBTNIDN)](https://codecov.io/gh/toughnoah/elastalert-operator) [![CI Workflow](https://github.com/toughnoah/elastalert-operator/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/toughnoah/elastalert-operator/actions/workflows/test-coverage.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/toughnoah/elastalert-operator)](https://goreportcard.com/report/github.com/toughnoah/elastalert-operator)
 <!-- vscode-markdown-toc -->
@@ -14,7 +15,7 @@
 	numbering=true
 	autoSave=true
 	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->![Go 1.16](https://img.shields.io/badge/Go-v1.16-blue)
+<!-- /vscode-markdown-toc -->
 # Elastalert Operator for Kubernetes
 
 The Elastalert Operator is an implementation of a [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
