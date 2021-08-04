@@ -3,9 +3,9 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"elastalert/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/toughnoah/elastalert-operator/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

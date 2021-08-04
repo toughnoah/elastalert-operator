@@ -17,8 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"elastalert/controllers/observer"
 	"flag"
+	"github.com/toughnoah/elastalert-operator/controllers/observer"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	esv1alpha1 "elastalert/api/v1alpha1"
-	"elastalert/controllers"
+	esv1alpha1 "github.com/toughnoah/elastalert-operator/api/v1alpha1"
+	"github.com/toughnoah/elastalert-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

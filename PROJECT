@@ -14,6 +14,6 @@ resources:
   domain: noah.domain
   group: es
   kind: Elastalert
-  path: elastalert/api/v1alpha1
+  path: github.com/toughnoah/elastalert-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

@@ -1,9 +1,9 @@
 package podspec
 
 import (
-	"elastalert/api/v1alpha1"
 	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/require"
+	"github.com/toughnoah/elastalert-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
