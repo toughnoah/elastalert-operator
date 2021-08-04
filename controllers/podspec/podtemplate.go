@@ -1,7 +1,7 @@
 package podspec
 
 import (
-	"elastalert/api/v1alpha1"
+	"github.com/toughnoah/elastalert-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"time"
 )

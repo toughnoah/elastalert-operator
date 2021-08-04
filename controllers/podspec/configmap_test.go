@@ -1,8 +1,8 @@
 package podspec
 
 import (
-	esv1alpha1 "elastalert/api/v1alpha1"
 	"github.com/stretchr/testify/require"
+	esv1alpha1 "github.com/toughnoah/elastalert-operator/api/v1alpha1"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

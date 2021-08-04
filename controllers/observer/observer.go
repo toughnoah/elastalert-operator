@@ -2,10 +2,10 @@ package observer
 
 import (
 	"context"
-	esv1alpha1 "elastalert/api/v1alpha1"
-	"elastalert/controllers/event"
-	"elastalert/controllers/podspec"
 	"fmt"
+	esv1alpha1 "github.com/toughnoah/elastalert-operator/api/v1alpha1"
+	"github.com/toughnoah/elastalert-operator/controllers/event"
+	"github.com/toughnoah/elastalert-operator/controllers/podspec"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
