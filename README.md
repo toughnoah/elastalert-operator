@@ -58,7 +58,7 @@ Once the `elastalert-operator` deployment in the namespace `alert` is ready, cre
 
 ```
 kubectl apply -n alert -f - <<EOF
-apiVersion: es.noah.domain/v1alpha1
+apiVersion: es.noah.domain/v1
 kind: Elastalert
 metadata:
   name: elastalert
@@ -137,7 +137,7 @@ error-message.yaml      error-status-code.yaml
 ###  2.1. <a name='ElasticsearchCert'></a>Elasticsearch Cert 
 ```
 kubectl apply -n alert -f - <<EOF
-apiVersion: es.noah.domain/v1alpha1
+apiVersion: es.noah.domain/v1
 kind: Elastalert
 metadata:
   name: elastalert
@@ -187,7 +187,7 @@ elastalert-es-cert                 Opaque                                1      
 `overall` is used to config global alert settings. If you defined `alert` in a rule, it will override `overall` settings.
 ```
 kubectl apply -n alert -f - <<EOF
-apiVersion: es.noah.domain/v1alpha1
+apiVersion: es.noah.domain/v1
 kind: Elastalert
 metadata:
   name: elastalert
@@ -216,7 +216,7 @@ EOF
 Define customized podTemplate
 ```
 kubectl apply -n alert -f - <<EOF
-apiVersion: es.noah.domain/v1alpha1
+apiVersion: es.noah.domain/v1
 kind: Elastalert
 metadata:
   name: elastalert

@@ -1,4 +1,4 @@
-apiVersion: es.noah.domain/v1alpha1
+apiVersion: es.noah.domain/v1
 kind: Elastalert
 metadata:
   name: elastalert-sample
